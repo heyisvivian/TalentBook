@@ -777,7 +777,7 @@ function postingChecks(j) {
   const payRule = { ON: "Ontario ESA (from 1 Jan 2026)", BC: "BC Pay Transparency Act", PE: "PEI Employment Standards Act" }[j.prov];
   if (payRule) out.push(pay ? ["good", `Pay range disclosed (${payRule})`] : ["bad", `Pay range missing — required under ${payRule}`]);
   else out.push(pay ? ["good", "Pay range disclosed (best practice in " + j.prov + ")"] : ["warn", "No pay range; not mandatory in " + j.prov + " but expected by candidates"]);
-  if (j.prov === "ON" && (k?.size ?? 25) >= 25) {
+  if (j.prov === "ON" && (k?.size || 25) >= 25) {
     const width = annual(j.salary.max, j.salary.type) - annual(j.salary.min, j.salary.type);
     if (pay && annual(j.salary.max, j.salary.type) <= 200000 && width > 50000) out.push(["bad", `Range is ${fmtK(width)} wide; Ontario caps it at $50k for jobs paying up to $200k`]);
     else if (pay) out.push(["good", "Range width within Ontario's $50k limit"]);
@@ -1051,9 +1051,9 @@ function viewJob() {
 }
 
 function viewClients() {
-  return `<div class="page-head"><div><h1>My clients</h1><p>Hiring preferences, contacts and terms for each client you manage.</p></div></div>
+  return `<div class="page-head"><div><h1>My clients</h1><p>Hiring preferences, contacts and terms for each client you manage.</p></div><span class="spacer"></span><button class="btn primary" data-act="add-client">+ Add client</button></div>
     <div class="cards">${mine(DB.clients).map(k => { const open = DB.jobs.filter(j => j.client === k.id && j.status === "Open"); const d = daysSince(k.lastContact);
-      return `<button class="card" data-client="${k.id}"><strong style="font-size:1rem">${esc(k.name)}</strong><span class="muted" style="font-size:.84rem">${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size} employees</span>
+      return `<button class="card" data-client="${k.id}"><strong style="font-size:1rem">${esc(k.name)}</strong><span class="muted" style="font-size:.84rem">${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size ? k.size + " employees" : "size not set"}</span>
         <ul class="pain moti">${k.prefs.slice(0, 2).map(p => `<li>${esc(p)}</li>`).join("")}</ul>
         <span class="row" style="font-size:.8rem"><span class="chip">${open.length} open job${open.length === 1 ? "" : "s"}</span><span class="row" style="gap:6px"><span class="dot ${d <= 30 ? "good" : "warn"}"></span>Last contact ${d} days ago</span></span></button>`; }).join("")}</div>`;
 }
@@ -1062,17 +1062,17 @@ function viewClient() {
   if (!k || k.owner !== me) return `<div class="empty">This client belongs to another recruiter's desk.</div>`;
   const js = DB.jobs.filter(j => j.client === k.id);
   return `<div><button class="btn ghost sm" data-go="clients">← My clients</button></div>
-    <div class="page-head"><div><h1>${esc(k.name)}</h1><p>${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size} employees</p></div></div>
+    <div class="page-head"><div><h1>${esc(k.name)}</h1><p>${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size ? k.size + " employees" : "size not set"}</p></div></div>
     <div class="two">
       <div class="stack">
-        <section class="panel"><div class="panel-head"><h2>Hiring preferences</h2></div><ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
+        <section class="panel"><div class="panel-head"><h2>Hiring preferences</h2></div>${k.prefs.length ? `<ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : `<p class="muted">No preferences yet. Add the first one below.</p>`}
           ${k.avoid.length ? `<h3 style="margin:14px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
           <form id="pref-form" class="row" style="margin-top:14px"><input class="input" id="pref-text" style="flex:1;min-width:180px" placeholder="Add a preference, e.g. Prefers candidates within 45 min of office" required><button class="btn sm">Add</button></form>
           <p class="demo-note" style="margin-top:8px">Keep preferences job-related. Requests based on age, gender, origin, religion, family status or disability breach human rights codes and should be declined.</p></section>
-        <section class="panel"><h2>Jobs</h2><div class="list">${js.map(j => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1">${esc(j.title)}</strong><span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span></span><span class="muted" style="font-size:.82rem">${esc(j.city)} · <span class="num">${fmtPay(j.salary)}</span> · ${j.pipeline.length} in pipeline</span></button>`).join("")}</div></section>
+        <section class="panel"><h2>Jobs</h2><div class="list">${js.length ? "" : `<div class="empty">No jobs for this client yet.</div>`}${js.map(j => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1">${esc(j.title)}</strong><span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span></span><span class="muted" style="font-size:.82rem">${esc(j.city)} · <span class="num">${fmtPay(j.salary)}</span> · ${j.pipeline.length} in pipeline</span></button>`).join("")}</div></section>
       </div>
       <div class="stack">
-        <section class="panel"><h2>Contacts</h2>${k.contacts.map(p => `<div class="me" style="margin-bottom:8px"><span class="avatar">${initials(p.n)}</span><div><strong>${esc(p.n)}</strong><span>${esc(p.r)} · ${esc(p.e)}</span></div></div>`).join("")}</section>
+        <section class="panel"><h2>Contacts</h2>${k.contacts.length ? "" : `<div class="empty">No contact added yet.</div>`}${k.contacts.map(p => `<div class="me" style="margin-bottom:8px"><span class="avatar">${initials(p.n)}</span><div><strong>${esc(p.n)}</strong><span>${esc(p.r)} · ${esc(p.e)}</span></div></div>`).join("")}</section>
         <section class="panel"><h2>Terms</h2><dl class="kv"><dt>Fee</dt><dd>${esc(k.fee)}</dd><dt>Guarantee</dt><dd>${esc(k.guarantee)}</dd><dt>Last contact</dt><dd>${fmtDate(k.lastContact)}</dd></dl></section>
       </div>
     </div>`;
@@ -1233,6 +1233,31 @@ function viewUpload() {
   </div></div>`;
 }
 
+function viewAddClient() {
+  const provs = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"];
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="ac-title">
+    <div class="panel-head"><h2 id="ac-title">Add a client</h2><span class="spacer"></span><button class="btn ghost sm" data-act="close">Close</button></div>
+    <form id="client-form" class="stack">
+      <div class="form-grid">
+        <div class="field full"><label for="k-name">Company name</label><input class="input" id="k-name" required placeholder="e.g. Maple Ridge Engineering Ltd."></div>
+        <div class="field"><label for="k-industry">Industry</label><input class="input" id="k-industry" placeholder="e.g. Consulting engineering"></div>
+        <div class="field"><label for="k-size">Employees</label><input class="input" id="k-size" type="number" min="1" placeholder="e.g. 120"></div>
+        <div class="field"><label for="k-city">City</label><input class="input" id="k-city" required placeholder="e.g. Toronto"></div>
+        <div class="field"><label for="k-prov">Province / territory</label><select class="input" id="k-prov">${provs.map(p => `<option ${p === "ON" ? "selected" : ""}>${p}</option>`).join("")}</select></div>
+        <div class="field"><label for="k-cname">Hiring contact</label><input class="input" id="k-cname" placeholder="Full name"></div>
+        <div class="field"><label for="k-crole">Contact's title</label><input class="input" id="k-crole" placeholder="e.g. HR Manager"></div>
+        <div class="field full"><label for="k-cemail">Contact's email</label><input class="input" id="k-cemail" type="email" placeholder="name@company.com"></div>
+        <div class="field full"><label for="k-prefs">Hiring preferences (one per line)</label><textarea class="input" id="k-prefs" placeholder="e.g. P.Eng required&#10;Hybrid, 3 days in office"></textarea></div>
+        <div class="field full"><label for="k-avoid">Avoid (one per line)</label><textarea class="input" id="k-avoid" style="min-height:52px" placeholder="e.g. No site experience"></textarea></div>
+        <div class="field"><label for="k-fee">Fee</label><input class="input" id="k-fee" value="20% of first-year base"></div>
+        <div class="field"><label for="k-guarantee">Guarantee</label><input class="input" id="k-guarantee" value="90 days"></div>
+      </div>
+      <p class="demo-note">Employee count matters: Ontario's job-posting rules apply to employers with 25 or more employees. Keep preferences job-related; requests based on protected grounds breach human rights codes.</p>
+      <div class="row"><button class="btn primary">Save client</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>
+    </form>
+  </div></div>`;
+}
+
 function viewResume() {
   const c = cand(ui.id); if (!c) return "";
   return `<div class="scrim" data-act="close-scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="cv-title">
@@ -1249,7 +1274,7 @@ function render() {
   const focusId = document.activeElement?.id, selStart = document.activeElement?.selectionStart;
   if (!me) { app.innerHTML = viewLogin(); return; }
   const views = { home: viewHome, candidates: viewCandidates, candidate: viewCandidate, jobs: viewJobs, job: viewJob, clients: viewClients, client: viewClient, compliance: viewCompliance };
-  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : ui.modal === "resume" ? viewResume() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
+  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : ui.modal === "resume" ? viewResume() : ui.modal === "client" ? viewAddClient() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
   if (focusId) { const el = document.getElementById(focusId); if (el && el.focus) { el.focus(); try { if (selStart != null) el.setSelectionRange(selStart, selStart); } catch (e) {} } }
   const drop = document.getElementById("drop");
   if (drop) {
@@ -1292,6 +1317,7 @@ document.addEventListener("click", e => {
     case "close": ui.modal = null; render(); break;
     case "clear-search": ui.filters = null; ui.query = ""; render(); break;
     case "log": ui.modal = ui.modal === "log" ? null : "log"; render(); document.getElementById("log-text")?.focus(); break;
+    case "add-client": ui.modal = "client"; render(); document.getElementById("k-name")?.focus(); break;
     case "view-resume": ui.modal = "resume"; render(); break;
     case "edit-linkedin": ui.modal = ui.modal === "linkedin" ? null : "linkedin"; ui.liErr = null; render(); document.getElementById("li-url")?.focus(); break;
     case "add-memo": ui.modal = ui.modal === "memo" ? null : "memo"; render(); document.getElementById("memo-text")?.focus(); break;
@@ -1332,6 +1358,13 @@ document.addEventListener("submit", e => {
       const u = cleanLinkedIn(v("li-url"));
       if (u === null) { ui.liErr = "Use a profile link like https://www.linkedin.com/in/name"; render(); return; }
       cand(ui.id).linkedin = u; ui.modal = null; ui.liErr = null; save(); toast(u ? "LinkedIn link saved" : "LinkedIn link removed"); break;
+    }
+    case "client-form": {
+      const lines = id => v(id).split("\n").map(x => x.trim()).filter(Boolean);
+      const k = { id: uid("k"), owner: me, name: v("k-name"), industry: v("k-industry") || "Not set", city: v("k-city"), prov: v("k-prov"), size: +v("k-size") || 0,
+        contacts: v("k-cname") ? [{ n: v("k-cname"), r: v("k-crole") || "Hiring contact", e: v("k-cemail") }] : [],
+        prefs: lines("k-prefs"), avoid: lines("k-avoid"), fee: v("k-fee") || "Not agreed", guarantee: v("k-guarantee") || "Not agreed", lastContact: ago(0) };
+      DB.clients.push(k); save(); ui.modal = null; ui.view = "client"; ui.id = k.id; toast("Client added"); break;
     }
     case "pref-form": { client(ui.id).prefs.push(v("pref-text")); save(); toast("Preference added"); break; }
     case "cand-form": {
