@@ -1155,7 +1155,7 @@ function viewPipeline() {
 function viewTeam() {
   if (!can("manageUsers")) return `<div class="empty">Only admins can manage the team.</div>`;
   const rows = [["See and search every recruiter's candidates", 1, 1, 0], ["Upload résumés and keep their own candidates", 1, 1, 1], ["Edit a candidate record (owner only)", 1, 1, 1], ["Move candidates through the pipeline", 1, 1, 1],
-    ["Add and edit clients", 1, 1, 0], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Add users and change roles", 1, 0, 0]];
+    ["Add and edit clients", 1, 1, 0], ["Add hiring preferences to their clients", 1, 1, 1], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Add users and change roles", 1, 0, 0]];
   return `<div class="page-head"><div><h1>Team &amp; roles</h1><p>Who can do what in ${esc(DB.company.name)}.</p></div></div>
     <section class="panel"><h2>Permissions</h2><div class="table-wrap"><table><thead><tr><th>Action</th><th>Admin</th><th>Manager</th><th>Recruiter</th></tr></thead><tbody>
       ${rows.map(([a, ...r]) => `<tr><td>${a}</td>${r.map(v => `<td>${v ? `<span class="ic good" style="display:inline-grid;width:20px;height:20px;border-radius:50%;place-items:center;font-size:.72rem">✓</span>` : `<span class="muted">—</span>`}</td>`).join("")}</tr>`).join("")}
@@ -1235,7 +1235,7 @@ function viewClient() {
       <div class="stack">
         <section class="panel"><div class="panel-head"><h2>Hiring preferences</h2></div>${k.prefs.length ? `<ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : `<p class="muted">No preferences yet.</p>`}
           ${k.avoid.length ? `<h3 style="margin:14px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
-          ${!can("editClient") ? `<p class="demo-note" style="margin-top:10px">Heard something new from this client? Tell your manager, who keeps client records up to date.</p>` : `<form id="pref-form" class="row" style="margin-top:14px"><input class="input" id="pref-text" style="flex:1;min-width:180px" placeholder="Add a preference, e.g. Prefers candidates within 45 min of office" required><button class="btn sm">Add</button></form>`}
+          ${!visClients().includes(k) ? "" : `<form id="pref-form" class="row" style="margin-top:14px"><input class="input" id="pref-text" style="flex:1;min-width:180px" placeholder="Add a preference, e.g. Prefers candidates within 45 min of office" required><button class="btn sm">Add</button></form>`}
           <p class="demo-note" style="margin-top:8px">Keep preferences job-related. Requests based on age, gender, origin, religion, family status or disability breach human rights codes and should be declined.</p></section>
         <section class="panel"><h2>Jobs</h2><div class="list">${js.length ? "" : `<div class="empty">No jobs for this client yet.</div>`}${js.map(j => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1">${esc(j.title)}</strong><span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span></span><span class="muted" style="font-size:.82rem">${esc(j.city)} · <span class="num">${fmtPay(j.salary)}</span> · ${j.pipeline.length} in pipeline</span></button>`).join("")}</div></section>
       </div>
@@ -1565,7 +1565,7 @@ document.addEventListener("submit", e => {
         prefs: lines("k-prefs"), avoid: lines("k-avoid"), fee: v("k-fee") || "Not agreed", guarantee: v("k-guarantee") || "Not agreed", lastContact: ago(0) };
       DB.clients.push(k); save(); ui.modal = null; ui.view = "client"; ui.id = k.id; toast("Client added"); break;
     }
-    case "pref-form": { if (!can("editClient")) break; client(ui.id).prefs.push(v("pref-text")); save(); toast("Preference added"); break; }
+    case "pref-form": { if (!visClients().includes(client(ui.id))) break; client(ui.id).prefs.push(v("pref-text")); save(); toast("Preference added"); break; }
     case "cand-form": {
       const smin = +v("f-smin") || 0, smax = +v("f-smax") || smin;
       const c = { id: uid("c"), owner: me, name: v("f-name"), title: v("f-title"), city: v("f-city") || "Unknown", prov: v("f-prov"), email: v("f-email"), phone: v("f-phone"),

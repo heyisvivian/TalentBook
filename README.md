@@ -25,6 +25,7 @@ Every account uses the password `demo`.
 | Edit a candidate record (owner only) | ✓ | ✓ | ✓ |
 | Move candidates through the pipeline | ✓ | ✓ | ✓ |
 | Add and edit clients | ✓ | ✓ | |
+| Add hiring preferences to their clients | ✓ | ✓ | ✓ |
 | Create jobs, change job status, assign recruiters | ✓ | ✓ | |
 | Add users and change roles | ✓ | | |
 
