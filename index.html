@@ -111,7 +111,8 @@ textarea.input { resize: vertical; min-height: 72px; }
 /* ---------- shell ---------- */
 .shell { display: grid; grid-template-columns: 228px 1fr; min-height: 100%; }
 .rail { background: var(--surface); border-right: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
-.rail .brand { padding: 4px 8px 14px; }
+.rail .brand { padding: 4px 8px 14px; align-items: flex-start; }
+.brand .company { display: block; font-family: var(--f-body); font-size: .74rem; font-weight: 600; color: var(--muted); letter-spacing: 0; line-height: 1.3; margin-top: 2px; }
 .nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 8px 10px; border-radius: 8px; font-weight: 600; color: var(--muted); text-align: left; }
 .nav-btn:hover { background: var(--surface-2); color: var(--fg); }
 .nav-btn[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
@@ -255,7 +256,7 @@ button.card:hover { border-color: var(--accent); }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v1";
+const STORE_KEY = "talentbook-demo-v2";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -265,10 +266,11 @@ const uid = p => p + Math.random().toString(36).slice(2, 9);
 
 /* ---------------- seed data ---------------- */
 function seed() {
+  const company = { name: "Northbound Engineering Recruitment", short: "Northbound", tagline: "Engineering recruitment across Canada", hq: "Toronto, ON" };
   const recruiters = [
-    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Engineering & Construction · Toronto", email: "maya.chen@northbound.example", licence: "ON recruiter licence RL-2024-0418" },
-    { id: "r2", name: "Julien Tremblay", initials: "JT", desk: "Industrial & Automation · Montréal", email: "julien.tremblay@northbound.example", licence: "QC agency permit (CNESST) AP-1127" },
-    { id: "r3", name: "Priya Natarajan", initials: "PN", desk: "Technology · Vancouver & Calgary", email: "priya.natarajan@northbound.example", licence: "ON recruiter licence RL-2024-0533" }
+    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Structural, Civil & Construction · Toronto", email: "maya.chen@northboundeng.example", licence: "ON recruiter licence RL-2024-0418" },
+    { id: "r2", name: "Julien Tremblay", initials: "JT", desk: "Electrical & Automation · Montréal", email: "julien.tremblay@northboundeng.example", licence: "ON recruiter licence RL-2024-0418" },
+    { id: "r3", name: "Priya Natarajan", initials: "PN", desk: "Energy & Geotechnical · Calgary", email: "priya.natarajan@northboundeng.example", licence: "ON recruiter licence RL-2024-0418" }
   ];
   const consent = (d, method, casl, months = 24) => ({ date: ago(d), method, casl, retainUntil: addDays(ago(d), Math.round(months * 30.4)) });
   const S = (n, y) => ({ n, y });
@@ -410,45 +412,45 @@ function seed() {
       comms: [{ d: ago(60), type: "Call", s: "Explained LMIA timeline to candidate." }],
       consent: consent(60, "Online form", "Express"), resume: "Thomas_Nguyen.pdf" },
 
-    { id: "c14", owner: "r3", name: "Aisha Robinson", title: "Senior Software Engineer", city: "Vancouver", prov: "BC", email: "aisha.r@mail.example", phone: "(604) 555-0114",
-      years: 9, designations: [], langs: ["English"], auth: "Canadian citizen", status: "Active",
-      salary: { min: 165000, max: 185000, type: "annual" }, modes: ["Remote"], relocate: false, notice: "3 weeks",
-      skills: [S("Python", 9), S("AWS", 7), S("Kubernetes", 4), S("PostgreSQL", 8), S("React", 3)],
-      pains: ["Her company is moving to US-hours on-call"], motives: ["Remote, Pacific time team", "Fintech or climate tech"],
-      memory: [{ d: ago(15), tag: "Compensation", t: "$172k base + RSUs now. Needs $165k+ base, equity is a bonus." }],
-      comms: [{ d: ago(15), type: "Call", s: "Screened for Cascadia Fintech senior backend role." }],
-      consent: consent(15, "Online form", "Express"), resume: "Aisha_Robinson.pdf" },
-    { id: "c15", owner: "r3", name: "Liam Fraser", title: "Data Engineer", city: "Calgary", prov: "AB", email: "liam.fraser@mail.example", phone: "(403) 555-0122",
-      years: 5, designations: [], langs: ["English"], auth: "Permanent resident", status: "Passive",
+    { id: "c14", owner: "r3", name: "Aisha Robinson", title: "Geotechnical Engineer", city: "Vancouver", prov: "BC", email: "aisha.r@mail.example", phone: "(604) 555-0114",
+      years: 9, designations: ["P.Eng"], langs: ["English"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 135000, max: 150000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "3 weeks",
+      skills: [S("Foundation design", 9), S("Slope stability (Slide2)", 7), S("Site investigation", 9), S("gINT", 6), S("AutoCAD", 8)],
+      pains: ["Mostly residential lot reports, little infrastructure work"], motives: ["Transit and bridge projects in Metro Vancouver", "Path to Associate"],
+      memory: [{ d: ago(15), tag: "Compensation", t: "$138k base now. Needs $135k+ and a vehicle allowance for field days." }],
+      comms: [{ d: ago(15), type: "Call", s: "Screened for Coastline Geotechnical senior role. Strong on foundations." }],
+      consent: consent(15, "Online form", "Express"), resume: "Aisha_Robinson_PEng.pdf" },
+    { id: "c15", owner: "r3", name: "Liam Fraser", title: "Pipeline Engineer", city: "Calgary", prov: "AB", email: "liam.fraser@mail.example", phone: "(403) 555-0122",
+      years: 5, designations: ["P.Eng"], langs: ["English"], auth: "Permanent resident", status: "Passive",
       salary: { min: 120000, max: 135000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "2 weeks",
-      skills: [S("Python", 5), S("SQL", 6), S("Airflow", 3), S("Snowflake", 3), S("dbt", 2)],
-      pains: ["Legacy SSIS stack"], motives: ["Modern data stack"],
+      skills: [S("CAESAR II", 4), S("Pipeline design (CSA Z662)", 5), S("AutoCAD", 5), S("Project coordination", 3)],
+      pains: ["Project pipeline at his firm slowed after a merger"], motives: ["Stable owner-operator role"],
       memory: [{ d: ago(110), tag: "Preference", t: "Downtown Calgary only, takes the C-Train." }],
-      comms: [{ d: ago(110), type: "Email", s: "Sent two roles, both declined (on-site 5 days)." }],
+      comms: [{ d: ago(110), type: "Email", s: "Sent two roles, both declined (5 days on-site)." }],
       consent: consent(110, "Email reply", "Express"), resume: "Liam_Fraser.pdf" },
-    { id: "c16", owner: "r3", name: "Wei Zhang", title: "Full-stack Developer", city: "Burnaby", prov: "BC", email: "wei.zhang@mail.example", phone: "(778) 555-0145",
-      years: 4, designations: [], langs: ["English", "Mandarin"], auth: "Open work permit (to Mar 2028)", status: "Active",
-      salary: { min: 105000, max: 120000, type: "annual" }, modes: ["Hybrid", "Remote"], relocate: false, notice: "2 weeks",
-      skills: [S("TypeScript", 4), S("React", 4), S("Node.js", 4), S("PostgreSQL", 3), S("AWS", 2)],
-      pains: ["Small team, no code review culture"], motives: ["Mentorship from senior engineers"],
-      memory: [{ d: ago(3), tag: "Work authorization", t: "PGWP to March 2028, no sponsorship needed now." }],
-      comms: [{ d: ago(3), type: "Call", s: "Intro call; sending two take-home friendly roles." }],
+    { id: "c16", owner: "r3", name: "Wei Zhang", title: "Electrical Engineer (EIT)", city: "Burnaby", prov: "BC", email: "wei.zhang@mail.example", phone: "(778) 555-0145",
+      years: 4, designations: ["EIT"], langs: ["English", "Mandarin"], auth: "Open work permit (to Mar 2028)", status: "Active",
+      salary: { min: 90000, max: 105000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "2 weeks",
+      skills: [S("ETAP", 3), S("Power distribution design", 4), S("AutoCAD Electrical", 4), S("Canadian Electrical Code (CEC)", 4)],
+      pains: ["No P.Eng on his team to sign off his EGBC experience"], motives: ["Mentorship towards P.Eng"],
+      memory: [{ d: ago(3), tag: "Work authorization", t: "PGWP to March 2028, no LMIA needed now." }],
+      comms: [{ d: ago(3), type: "Call", s: "Intro call. Interested in utility and substation work." }],
       consent: consent(3, "Verbal on call, confirmed by email", "Express"), resume: "Wei_Zhang_Resume.pdf" },
-    { id: "c17", owner: "r3", name: "Noah Tremblay-Clarke", title: "DevOps Engineer", city: "Edmonton", prov: "AB", email: "noah.tc@mail.example", phone: "(780) 555-0102",
-      years: 7, designations: [], langs: ["English", "French"], auth: "Canadian citizen", status: "Passive",
-      salary: { min: 140000, max: 155000, type: "annual" }, modes: ["Remote"], relocate: false, notice: "4 weeks",
-      skills: [S("Terraform", 5), S("Kubernetes", 5), S("Azure", 6), S("CI/CD", 7), S("Python", 4)],
-      pains: ["On-call every second week"], motives: ["Fully remote", "Fair on-call rotation"],
-      memory: [{ d: ago(75), tag: "Preference", t: "Only fully remote roles, can travel quarterly." }],
+    { id: "c17", owner: "r3", name: "Noah Tremblay-Clarke", title: "Process Engineer", city: "Edmonton", prov: "AB", email: "noah.tc@mail.example", phone: "(780) 555-0102",
+      years: 7, designations: ["P.Eng"], langs: ["English", "French"], auth: "Canadian citizen", status: "Passive",
+      salary: { min: 130000, max: 145000, type: "annual" }, modes: ["On-site", "Hybrid"], relocate: false, notice: "4 weeks",
+      skills: [S("Aspen HYSYS", 6), S("P&ID", 7), S("HAZOP", 5), S("Lean / Six Sigma", 3)],
+      pains: ["Shift rotation at the upgrader"], motives: ["Day role in Edmonton's Industrial Heartland"],
+      memory: [{ d: ago(75), tag: "Preference", t: "Will not do fly-in/fly-out. Fine with occasional plant visits." }],
       comms: [{ d: ago(75), type: "LinkedIn", s: "Short update, still passive." }],
       consent: consent(75, "Online form", "Express"), resume: "Noah_TC.pdf" },
-    { id: "c18", owner: "r3", name: "Grace Kim", title: "Product Manager", city: "Toronto", prov: "ON", email: "grace.kim@mail.example", phone: "(416) 555-0170",
+    { id: "c18", owner: "r3", name: "Grace Kim", title: "Project Controls Specialist", city: "Calgary", prov: "AB", email: "grace.kim@mail.example", phone: "(403) 555-0170",
       years: 6, designations: [], langs: ["English", "Korean"], auth: "Canadian citizen", status: "Active",
-      salary: { min: 130000, max: 145000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
-      skills: [S("Product strategy", 6), S("SQL", 4), S("Agile / Scrum", 6), S("Stakeholder management", 6)],
-      pains: ["Feature-factory roadmap"], motives: ["Ownership of a B2B product"],
-      memory: [{ d: ago(28), tag: "Preference", t: "Downtown Toronto hybrid, 2 days office max." }],
-      comms: [{ d: ago(28), type: "Meeting", s: "Coffee at King & Spadina. Active from November." }],
+      salary: { min: 110000, max: 125000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
+      skills: [S("Primavera P6", 6), S("Cost control", 6), S("Scheduling", 6), S("Stakeholder management", 4)],
+      pains: ["Reporting only, no say in project decisions"], motives: ["Move into project management"],
+      memory: [{ d: ago(28), tag: "Preference", t: "Hybrid, 2 days in office max." }],
+      comms: [{ d: ago(28), type: "Meeting", s: "Coffee on Stephen Avenue. Active from November." }],
       consent: consent(28, "Verbal on call, confirmed by email", "Express"), resume: "Grace_Kim.pdf" },
     { id: "c19", owner: "r3", name: "Jordan Bell", title: "Controls Engineer", city: "Calgary", prov: "AB", email: "jordan.bell@mail.example", phone: "(403) 555-0189",
       years: 8, designations: ["P.Eng"], langs: ["English"], auth: "Canadian citizen", status: "Active",
@@ -480,10 +482,10 @@ function seed() {
       contacts: [{ n: "Marc Bouchard", r: "Directeur d'usine", e: "mbouchard@asl.example" }],
       prefs: ["Contract designers through agency, 6-month minimum", "Bilingual drawings and documentation"],
       avoid: [], fee: "Bill rate = pay rate × 1.35", guarantee: "Replacement within 2 weeks", lastContact: ago(30) },
-    { id: "k6", owner: "r3", name: "Cascadia Fintech", industry: "Financial technology", city: "Vancouver", prov: "BC", size: 210,
-      contacts: [{ n: "Sam Reyes", r: "Head of Talent", e: "sam@cascadia.example" }],
-      prefs: ["Remote within Canada only (payroll set up in BC, AB, ON, QC)", "Take-home exercise of 3 hours or less", "Values open-source contributions"],
-      avoid: ["Candidates needing US work authorization"], fee: "20% of first-year base", guarantee: "90 days", lastContact: ago(9) },
+    { id: "k6", owner: "r3", name: "Coastline Geotechnical Ltd.", industry: "Geotechnical engineering", city: "Vancouver", prov: "BC", size: 75,
+      contacts: [{ n: "Sam Reyes", r: "Principal", e: "sam@coastlinegeo.example" }],
+      prefs: ["EGBC registration required for any engineer title", "About 30% field time; valid driver's licence needed", "Two interviews, the second with a principal"],
+      avoid: ["Candidates with no field investigation experience"], fee: "20% of first-year base", guarantee: "90 days", lastContact: ago(9) },
     { id: "k7", owner: "r3", name: "Prairie Energy Systems", industry: "Energy", city: "Calgary", prov: "AB", size: 450,
       contacts: [{ n: "Tom Hughes", r: "Engineering Manager", e: "thughes@prairie.example" }],
       prefs: ["APEGA registration for engineering roles", "Field visits about 25% of the time"],
@@ -515,23 +517,23 @@ function seed() {
       salary: { min: 34, max: 40, type: "hourly" }, must: ["SolidWorks", "GD&T"], nice: ["Inventor"], designations: [], langs: [],
       status: "Open", opened: ago(6), posting: { ai: "", vacancy: "existing", fr: false, text: "Conception de gabarits et outillage. Contrat de 6 mois." },
       pipeline: [] },
-    { id: "j7", owner: "r3", client: "k6", title: "Senior Backend Engineer", city: "Vancouver", prov: "BC", modes: ["Remote"], type: "Permanent",
-      salary: { min: 160000, max: 190000, type: "annual" }, must: ["Python", "AWS", "PostgreSQL"], nice: ["Kubernetes"], designations: [], langs: [],
-      status: "Open", opened: ago(16), posting: { ai: AI, vacancy: "existing", fr: false, text: "Payments platform team. Remote within Canada." },
+    { id: "j7", owner: "r3", client: "k6", title: "Senior Geotechnical Engineer", city: "Vancouver", prov: "BC", modes: ["Hybrid"], type: "Permanent",
+      salary: { min: 130000, max: 155000, type: "annual" }, must: ["Foundation design", "Slope stability (Slide2)", "Site investigation"], nice: ["gINT"], designations: ["P.Eng"], langs: [],
+      status: "Open", opened: ago(16), posting: { ai: AI, vacancy: "existing", fr: false, text: "Foundations and slope stability for Metro Vancouver infrastructure." },
       pipeline: [{ c: "c14", stage: "Submitted" }] },
     { id: "j8", owner: "r3", client: "k7", title: "Controls Engineer", city: "Calgary", prov: "AB", modes: ["On-site", "Hybrid"], type: "Permanent",
       salary: { min: 120000, max: 145000, type: "annual" }, must: ["PLC", "SCADA"], nice: ["Python", "Instrumentation"], designations: ["P.Eng"], langs: [],
       status: "Open", opened: ago(27), posting: { ai: "", vacancy: "existing", fr: false, text: "Controls for gas processing facilities. 25% field." },
       pipeline: [] }
   ];
-  return { recruiters, candidates, clients, jobs };
+  return { company, recruiters, candidates, clients, jobs };
 }
 
 /* ---------------- storage ---------------- */
 let DB, me = null;
 function load() {
   try { const raw = localStorage.getItem(STORE_KEY); if (raw) { DB = JSON.parse(raw); } } catch (e) { DB = null; }
-  if (!DB || !DB.candidates) DB = seed();
+  if (!DB || !DB.candidates || !DB.company) DB = seed();
   try { me = sessionStorage.getItem(STORE_KEY + "-me"); } catch (e) { me = null; }
   if (!DB.recruiters.some(r => r.id === me)) me = null;
 }
@@ -582,7 +584,7 @@ const SKILL_ALIASES = {
   "fea": "FEA (ANSYS)", "ansys": "FEA (ANSYS)", "six sigma": "Lean / Six Sigma", "lean": "Lean / Six Sigma", "hysys": "Aspen HYSYS", "stormwater": "Stormwater management",
   "scrum": "Agile / Scrum", "agile": "Agile / Scrum", "energy model": "Energy modelling", "energy modeling": "Energy modelling", "hap": "HAP (Carrier)", "ashrae": "ASHRAE 90.1",
   "working at heights": "Health & safety (Working at Heights)", "safety": "Health & safety (Working at Heights)", "obc": "Ontario Building Code", "building code": "Ontario Building Code",
-  "plc": "PLC", "scada": "SCADA", "solidworks": "SolidWorks", "envelope": "Building science"
+  "plc": "PLC", "caesar": "CAESAR II", "z662": "Pipeline design (CSA Z662)", "foundation": "Foundation design", "foundations": "Foundation design", "slope stability": "Slope stability (Slide2)", "scada": "SCADA", "solidworks": "SolidWorks", "envelope": "Building science"
 };
 const REGIONS = {
   "gta": ["Toronto", "Mississauga", "Brampton", "Markham", "Vaughan", "Oakville"], "greater toronto": ["Toronto", "Mississauga", "Brampton", "Markham", "Vaughan", "Oakville"],
@@ -773,7 +775,7 @@ function viewLogin() {
   const sel = ui.loginPick || "r1";
   return `<div class="login"><form class="login-card" id="login-form">
     <div class="brand"><span class="brand-mark">Tb</span>TalentBook</div>
-    <div><h1 style="font-size:1.4rem">Sign in to your desk</h1><p class="muted" style="margin-top:4px">Northbound Talent Partners · shared agency workspace. Each recruiter sees only their own candidates, clients and jobs.</p></div>
+    <div><span class="eyebrow">${esc(DB.company.tagline)}</span><h1 style="font-size:1.4rem;margin-top:4px">${esc(DB.company.name)}</h1><p class="muted" style="margin-top:4px">Sign in to your desk. Everyone here works for ${esc(DB.company.short)}; each recruiter manages their own candidates, clients and jobs.</p></div>
     <div class="who" role="group" aria-label="Recruiter">${DB.recruiters.map(r => `
       <button type="button" data-pick="${r.id}" aria-pressed="${r.id === sel}"><span class="avatar">${r.initials}</span><span><strong>${esc(r.name)}</strong><br><span class="muted" style="font-size:.8rem">${esc(r.desk)}</span></span></button>`).join("")}</div>
     <div class="field"><label for="login-email">Email</label><input class="input" id="login-email" value="${esc(recruiter(sel).email)}" autocomplete="username"></div>
@@ -791,7 +793,7 @@ function shell(inner) {
   const r = recruiter(me);
   return `<div class="shell">
     <nav class="rail" aria-label="Main">
-      <div class="brand"><span class="brand-mark">Tb</span>TalentBook</div>
+      <div class="brand"><span class="brand-mark">Tb</span><span>TalentBook<span class="company">${esc(DB.company.name)}</span></span></div>
       ${navBtn("home", "Ask", "search")}
       ${navBtn("candidates", "Candidates", "people", mine(DB.candidates).length)}
       ${navBtn("jobs", "Jobs", "brief", mine(DB.jobs).filter(j => j.status === "Open").length)}
@@ -848,7 +850,7 @@ function viewHome() {
   const examples = {
     r1: ["P.Eng structural engineers in the GTA under 130k", "Candidates not contacted in 3 months", "Revit MEP designers open to hybrid", "Bilingual civil engineers in Ontario"],
     r2: ["Bilingual project managers in Greater Montréal", "Engineers with PLC and SCADA, no LMIA", "Mechanical designers in Quebec", "Candidates not contacted in 2 months"],
-    r3: ["Remote Python engineers over 150k", "Developers in the Lower Mainland open to hybrid", "Controls engineers willing to relocate", "Candidates not contacted in 2 months"]
+    r3: ["P.Eng engineers in Alberta over 120k", "Geotechnical engineers in the Lower Mainland", "Controls engineers willing to relocate", "Candidates not contacted in 2 months"]
   }[me] || [];
   return `
     <div class="page-head"><div><h1>Good ${TODAY.getHours() < 12 ? "morning" : "afternoon"}, ${esc(r.name.split(" ")[0])}</h1><p>${fmtDate(TODAY.toISOString().slice(0, 10))} · ${esc(r.desk)}</p></div></div>
@@ -1064,7 +1066,7 @@ function viewCompliance() {
       <div class="stat"><b style="color:${consentRows.length ? "var(--bad)" : "var(--good)"}">${consentRows.length}</b><span>Consent or retention issues</span></div>
       <div class="stat"><b style="color:${implied.length ? "var(--warn)" : "var(--good)"}">${implied.length}</b><span>Implied CASL consent only</span></div>
       <div class="stat"><b style="color:${jobRows.length ? "var(--bad)" : "var(--good)"}">${jobRows.length}</b><span>Job postings to fix</span></div>
-      <div class="stat"><b style="font-size:1rem;padding-top:8px">${esc(r.licence)}</b><span>Your licence on file</span></div>
+      <div class="stat"><b style="font-size:1rem;padding-top:8px">${esc(r.licence)}</b><span>Company licence on file</span></div>
     </div>
     <div class="two">
       <div class="stack">
