@@ -675,7 +675,9 @@ const CITIES = { "toronto": "ON", "mississauga": "ON", "brampton": "ON", "markha
   "quebec city": "QC", "montreal": "QC", "laval": "QC", "sherbrooke": "QC", "gatineau": "QC", "vancouver": "BC", "burnaby": "BC", "calgary": "AB", "edmonton": "AB", "halifax": "NS", "winnipeg": "MB" };
 const CITY_LABEL = { "montreal": "Montréal", "quebec city": "Québec City" };
 const PROVS = { "ontario": "ON", "quebec": "QC", "british columbia": "BC", "alberta": "AB", "nova scotia": "NS", "manitoba": "MB", "saskatchewan": "SK", "new brunswick": "NB", " bc": "BC", " qc": "QC" };
-const STOP = new Set("a an and or the in at on of for to with who whom that are is be been has have having had any some all me show find get give list look looking search need want someone people person candidate candidates profile profiles talent near around based from within open experience exp also plus our my i we can could would like good strong great senior junior intermediate".split(" "));
+const STOP = new Set("a an and or the in at on of for to with who whom that are is be been has have having had any some all me show find get give list look looking search need want someone people person candidate candidates profile profiles talent near around based from within open experience exp also plus our my i we can could would like good strong great senior junior intermediate salary salaries pay paid budget comp compensation expected expecting expects earning earns making rate wage range role roles job jobs position work working".split(" "));
+const SUFFIXES = ["ations", "ation", "ural", "ures", "ure", "ings", "ing", "ers", "er", "ors", "or", "als", "al", "es", "s", "e"];
+const stem = w => { for (const x of SUFFIXES) if (w.endsWith(x) && w.length - x.length >= 4) return w.slice(0, -x.length); return w; };
 
 function knownSkills() {
   const set = new Set();
@@ -684,7 +686,7 @@ function knownSkills() {
   return [...set];
 }
 function parseQuery(q) {
-  let t = " " + norm(q).replace(/[,;!?]/g, " ") + " ";
+  let t = " " + norm(q).replace(/(\d),(\d{3})/g, "$1$2").replace(/[,;!?]/g, " ") + " ";
   const f = { skills: [], cities: [], provs: [], terms: [], labels: [] };
   const take = (re, fn) => { t = t.replace(re, (...m) => { fn(...m); return " "; }); };
 
@@ -696,6 +698,7 @@ function parseQuery(q) {
   take(/\$?\s*(\d{2,3})\s*k?\s*(?:-|–|to)\s*\$?\s*(\d{2,3})\s*k\b/g, (_, a, b) => { f.minPay = k(a); f.maxPay = k(b); f.labels.push(["band", `Budget ${fmtK(f.minPay)}–${fmtK(f.maxPay)}`]); });
   take(/(?:\bunder|\bbelow|\bless than|\bmax(?:imum)?|\bup to|<|\bno more than|\bat most)\s*\$?\s*(\d+)\s*(?:k|,?000)?\b/g, (_, n) => { f.maxPay = k(n); f.labels.push(["maxPay", `Expects ≤ ${fmtK(f.maxPay)}`]); });
   take(/(?:\bover|\babove|\bmore than|\bat least|\bmin(?:imum)?|>)\s*\$?\s*(\d+)\s*(?:k|,?000)?\b/g, (_, n) => { f.minPay = k(n); f.labels.push(["minPay", `Expects ≥ ${fmtK(f.minPay)}`]); });
+  if (f.maxPay == null && f.minPay == null) take(/(?:\baround\s+|\babout\s+|~\s*)?\$?\s*\b(\d{2,3})\s*k\b|\$\s*(\d{2,3}),?000\b|\b(\d{2,3}),000\b/g, (_, a, b, c) => { f.maxPay = k(a || b || c); f.labels.push(["maxPay", `Budget up to ${fmtK(f.maxPay)}`]); });
   take(/\b(\d{1,2})\s*\+?\s*(?:years?|yrs?)\b(?:\s+of)?/g, (_, n) => { f.minYears = +n; f.labels.push(["years", `${n}+ years`]); });
   take(/\b(?:willing to |open to |can |could )?relocat\w*\b/g, () => { f.relocate = true; f.labels.push(["relocate", "Open to relocation"]); });
   take(/\b(?:fully\s+)?remote\b/g, () => { f.mode = "Remote"; f.labels.push(["mode", "Remote"]); });
@@ -719,7 +722,7 @@ function parseQuery(q) {
   aliasKeys.forEach(a => { const re = new RegExp("\\b" + a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b"); if (re.test(t)) { t = t.replace(re, " "); const s = SKILL_ALIASES[a]; if (!f.skills.includes(s)) f.skills.push(s); } });
   f.skills.forEach(s => f.labels.push(["skill:" + s, s]));
 
-  f.terms = t.split(/\s+/).map(w => w.replace(/[^a-z0-9+#./-]/g, "")).filter(w => w.length > 2 && !STOP.has(w) && !/^\d+$/.test(w)).map(w => w.replace(/(ers|ors|s)$/, m => m === "ers" ? "er" : m === "ors" ? "or" : ""));
+  f.terms = t.split(/\s+/).map(w => w.replace(/[^a-z0-9+#./-]/g, "")).filter(w => w.length > 2 && !STOP.has(w) && !/^\d+k?$/.test(w));
   f.terms.forEach(w => f.labels.push(["term:" + w, `“${w}”`]));
   return f;
 }
@@ -774,11 +777,12 @@ function runSearch(f, pool) {
       let score = 50;
       const hits = f.skills.filter(s => c.skills.some(x => x.n === s));
       if (f.skills.length) { if (!hits.length) continue; score += 40 * hits.length / f.skills.length; }
-      if (useTerms && f.terms.length) {
-        const txt = candidateText(c);
-        const termHits = f.terms.filter(w => txt.includes(w));
-        if (termHits.length < f.terms.length) continue;
-        if (termHits.some(w => norm(c.title).includes(w))) score += 8;
+      if (f.terms.length) {
+        const txt = candidateText(c), title = norm(c.title);
+        const starts = (text, w) => new RegExp("(^|[^a-z0-9])" + stem(w).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(text);
+        const termHits = f.terms.filter(w => starts(txt, w));
+        if (useTerms ? termHits.length < f.terms.length : !termHits.length) continue;
+        score += 12 * termHits.length / f.terms.length + (termHits.some(w => starts(title, w)) ? 8 : 0);
       }
       score -= Math.min(r.days, 365) / 365 * 6;
       res.push({ c, why, hits, score });
@@ -926,7 +930,7 @@ function viewHome() {
     const { results: res, relaxedTerms } = runSearch(ui.filters, cs);
     results = `<section class="stack">
       <div class="panel-head"><h2>${res.length} candidate${res.length === 1 ? "" : "s"} found</h2><span class="spacer"></span><button class="btn ghost sm" data-act="clear-search">Clear search</button></div>
-      ${relaxedTerms ? `<div class="notice info">No title matched ${ui.filters.terms.map(w => `“${esc(w)}”`).join(", ")} exactly. Showing the closest candidates on your other criteria.</div>` : ""}
+      ${relaxedTerms ? `<div class="notice info">Nobody matches all of ${ui.filters.terms.map(w => `“${esc(w)}”`).join(", ")}. Showing candidates who match some of these words, best first.</div>` : ""}
       <div class="list">${res.length ? res.map(x => candRow(x.c, x)).join("") : `<div class="empty">No candidates on your desk match all of these. Remove a filter above to widen the search.</div>`}</div>
     </section>`;
   }
