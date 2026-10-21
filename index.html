@@ -130,6 +130,7 @@ textarea.input { resize: vertical; min-height: 72px; }
 .who { display: grid; gap: 8px; }
 .who button { display: flex; gap: 12px; align-items: center; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; }
 .who button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.who button[aria-pressed="true"] .chip { background: var(--surface); }
 .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .8rem; background: var(--surface-2); color: var(--fg); flex: none; }
 .avatar.lg { width: 56px; height: 56px; font-size: 1.1rem; background: var(--accent-soft); color: var(--accent); }
 .err { color: var(--bad); font-size: .85rem; }
@@ -284,7 +285,7 @@ button.card:hover { border-color: var(--accent); }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v6";
+const STORE_KEY = "talentbook-demo-v7";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -298,9 +299,7 @@ function seed() {
   const recruiters = [
     { id: "a1", name: "Sarah Lin", initials: "SL", desk: "Operations & Systems · Toronto", email: "sarah.lin@ivrecruitment.example", role: "admin" },
     { id: "m1", name: "David Ross", initials: "DR", desk: "Head of Engineering Recruitment · Toronto", email: "david.ross@ivrecruitment.example", role: "manager" },
-    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Structural, Civil & Construction · Toronto", email: "maya.chen@ivrecruitment.example", role: "recruiter" },
-    { id: "r2", name: "Julien Tremblay", initials: "JT", desk: "Electrical & Automation · Montréal", email: "julien.tremblay@ivrecruitment.example", role: "recruiter" },
-    { id: "r3", name: "Priya Natarajan", initials: "PN", desk: "Energy & Geotechnical · Calgary", email: "priya.natarajan@ivrecruitment.example", role: "recruiter" }
+    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Engineering recruitment · Toronto", email: "maya.chen@ivrecruitment.example", role: "recruiter" },
   ];
   const consent = (d, method, casl, months = 24) => ({ date: ago(d), method, casl, retainUntil: addDays(ago(d), Math.round(months * 30.4)) });
   const S = (n, y) => ({ n, y });
@@ -401,7 +400,7 @@ function seed() {
       comms: [{ d: ago(220), type: "Email", s: "Shared market salary data for HVAC engineers in the GTA." }],
       consent: consent(690, "Email reply", "Implied"), resume: "Elena_Petrova.pdf" },
 
-    { id: "c9", owner: "r2", name: "Mathieu Gagnon", title: "Automation Engineer", city: "Montréal", prov: "QC", email: "m.gagnon@mail.example", phone: "(514) 555-0133",
+    { id: "c9", owner: "r1", name: "Mathieu Gagnon", title: "Automation Engineer", city: "Montréal", prov: "QC", email: "m.gagnon@mail.example", phone: "(514) 555-0133",
       years: 11, designations: ["ing. (OIQ)"], langs: ["French", "English"], auth: "Canadian citizen", status: "Active",
       salary: { min: 110000, max: 125000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
       skills: [S("PLC", 11), S("SCADA", 9), S("Power distribution design", 5), S("AutoCAD Electrical", 8)],
@@ -409,7 +408,7 @@ function seed() {
       memory: [{ d: ago(20), tag: "Preference", t: "Max 20% travel. Prefers French-speaking workplace." }],
       comms: [{ d: ago(20), type: "Call", s: "Interested in Hydro-Laurentide automation role." }],
       consent: consent(20, "Verbal on call, confirmed by email", "Express"), resume: "Mathieu_Gagnon_CV.pdf" },
-    { id: "c10", owner: "r2", name: "Camille Roy", title: "Project Manager", city: "Laval", prov: "QC", email: "camille.roy@mail.example", phone: "(450) 555-0120",
+    { id: "c10", owner: "r1", name: "Camille Roy", title: "Project Manager", city: "Laval", prov: "QC", email: "camille.roy@mail.example", phone: "(450) 555-0120",
       years: 8, designations: ["PMP"], langs: ["French", "English"], auth: "Canadian citizen", status: "Active",
       salary: { min: 100000, max: 115000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
       skills: [S("MS Project", 8), S("Primavera P6", 5), S("Cost control", 8), S("Stakeholder management", 8), S("Contract administration (CCDC)", 4)],
@@ -417,7 +416,7 @@ function seed() {
       memory: [{ d: ago(45), tag: "Compensation", t: "Wants $108k minimum + 4 weeks vacation." }],
       comms: [{ d: ago(45), type: "Meeting", s: "Video call. Open to new opportunities from January." }],
       consent: consent(45, "Online form", "Express"), resume: "Camille_Roy.pdf" },
-    { id: "c11", owner: "r2", name: "Karim Benali", title: "Process Engineer (CPI)", city: "Québec City", prov: "QC", email: "karim.benali@mail.example", phone: "(418) 555-0177",
+    { id: "c11", owner: "r1", name: "Karim Benali", title: "Process Engineer (CPI)", city: "Québec City", prov: "QC", email: "karim.benali@mail.example", phone: "(418) 555-0177",
       years: 3, designations: ["CPI (OIQ)"], langs: ["French", "English", "Arabic"], auth: "Permanent resident", status: "Passive",
       salary: { min: 75000, max: 85000, type: "annual" }, modes: ["On-site"], relocate: true, notice: "2 weeks",
       skills: [S("Aspen HYSYS", 3), S("P&ID", 3), S("HAZOP", 2), S("Lean / Six Sigma", 2)],
@@ -425,7 +424,7 @@ function seed() {
       memory: [{ d: ago(100), tag: "Personal", t: "Finishing OIQ professional practice exam in spring." }],
       comms: [{ d: ago(100), type: "LinkedIn", s: "Replied to InMail. Passive." }],
       consent: consent(100, "Email reply", "Express"), resume: "Karim_Benali_CV.pdf" },
-    { id: "c12", owner: "r2", name: "Olivia Grant", title: "Mechanical Designer", city: "Sherbrooke", prov: "QC", email: "olivia.grant@mail.example", phone: "(819) 555-0108",
+    { id: "c12", owner: "r1", name: "Olivia Grant", title: "Mechanical Designer", city: "Sherbrooke", prov: "QC", email: "olivia.grant@mail.example", phone: "(819) 555-0108",
       years: 6, designations: [], langs: ["English", "French"], auth: "Canadian citizen", status: "Active",
       salary: { min: 32, max: 38, type: "hourly" }, modes: ["On-site"], relocate: false, notice: "1 week",
       skills: [S("SolidWorks", 6), S("Inventor", 4), S("GD&T", 5)],
@@ -433,7 +432,7 @@ function seed() {
       memory: [{ d: ago(8), tag: "Compensation", t: "Contract rate $36/h minimum, incorporated? No, T4 through agency." }],
       comms: [{ d: ago(8), type: "Call", s: "Available from 15 December." }],
       consent: consent(8, "Verbal on call, confirmed by email", "Express"), resume: "Olivia_Grant.pdf" },
-    { id: "c13", owner: "r2", name: "Thomas Nguyen", title: "Structural Engineer", city: "Montréal", prov: "QC", email: "thomas.nguyen@mail.example", phone: "(514) 555-0198",
+    { id: "c13", owner: "r1", name: "Thomas Nguyen", title: "Structural Engineer", city: "Montréal", prov: "QC", email: "thomas.nguyen@mail.example", phone: "(514) 555-0198",
       years: 6, designations: ["ing. (OIQ)"], langs: ["French", "English", "Vietnamese"], auth: "Employer-specific work permit (new employer needs LMIA)", status: "Active",
       salary: { min: 95000, max: 105000, type: "annual" }, modes: ["Hybrid"], relocate: true, notice: "4 weeks",
       skills: [S("ETABS", 5), S("SAP2000", 5), S("Revit", 4), S("Concrete design (CSA A23.3)", 6), S("Steel design (CSA S16)", 5)],
@@ -442,7 +441,7 @@ function seed() {
       comms: [{ d: ago(60), type: "Call", s: "Explained LMIA timeline to candidate." }],
       consent: consent(60, "Online form", "Express"), resume: "Thomas_Nguyen.pdf" },
 
-    { id: "c14", owner: "r3", name: "Aisha Robinson", title: "Geotechnical Engineer", city: "Vancouver", prov: "BC", email: "aisha.r@mail.example", phone: "(604) 555-0114",
+    { id: "c14", owner: "r1", name: "Aisha Robinson", title: "Geotechnical Engineer", city: "Vancouver", prov: "BC", email: "aisha.r@mail.example", phone: "(604) 555-0114",
       years: 9, designations: ["P.Eng"], langs: ["English"], auth: "Canadian citizen", status: "Active",
       salary: { min: 135000, max: 150000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "3 weeks",
       skills: [S("Foundation design", 9), S("Slope stability (Slide2)", 7), S("Site investigation", 9), S("gINT", 6), S("AutoCAD", 8)],
@@ -450,7 +449,7 @@ function seed() {
       memory: [{ d: ago(15), tag: "Compensation", t: "$138k base now. Needs $135k+ and a vehicle allowance for field days." }],
       comms: [{ d: ago(15), type: "Call", s: "Screened for Coastline Geotechnical senior role. Strong on foundations." }],
       consent: consent(15, "Online form", "Express"), resume: "Aisha_Robinson_PEng.pdf" },
-    { id: "c15", owner: "r3", name: "Liam Fraser", title: "Pipeline Engineer", city: "Calgary", prov: "AB", email: "liam.fraser@mail.example", phone: "(403) 555-0122",
+    { id: "c15", owner: "r1", name: "Liam Fraser", title: "Pipeline Engineer", city: "Calgary", prov: "AB", email: "liam.fraser@mail.example", phone: "(403) 555-0122",
       years: 5, designations: ["P.Eng"], langs: ["English"], auth: "Permanent resident", status: "Passive",
       salary: { min: 120000, max: 135000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "2 weeks",
       skills: [S("CAESAR II", 4), S("Pipeline design (CSA Z662)", 5), S("AutoCAD", 5), S("Project coordination", 3)],
@@ -458,7 +457,7 @@ function seed() {
       memory: [{ d: ago(110), tag: "Preference", t: "Downtown Calgary only, takes the C-Train." }],
       comms: [{ d: ago(110), type: "Email", s: "Sent two roles, both declined (5 days on-site)." }],
       consent: consent(110, "Email reply", "Express"), resume: "Liam_Fraser.pdf" },
-    { id: "c16", owner: "r3", name: "Wei Zhang", title: "Electrical Engineer (EIT)", city: "Burnaby", prov: "BC", email: "wei.zhang@mail.example", phone: "(778) 555-0145",
+    { id: "c16", owner: "r1", name: "Wei Zhang", title: "Electrical Engineer (EIT)", city: "Burnaby", prov: "BC", email: "wei.zhang@mail.example", phone: "(778) 555-0145",
       years: 4, designations: ["EIT"], langs: ["English", "Mandarin"], auth: "Open work permit (to Mar 2028)", status: "Active",
       salary: { min: 90000, max: 105000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "2 weeks",
       skills: [S("ETAP", 3), S("Power distribution design", 4), S("AutoCAD Electrical", 4), S("Canadian Electrical Code (CEC)", 4)],
@@ -466,7 +465,7 @@ function seed() {
       memory: [{ d: ago(3), tag: "Work authorization", t: "PGWP to March 2028, no LMIA needed now." }],
       comms: [{ d: ago(3), type: "Call", s: "Intro call. Interested in utility and substation work." }],
       consent: consent(3, "Verbal on call, confirmed by email", "Express"), resume: "Wei_Zhang_Resume.pdf" },
-    { id: "c17", owner: "r3", name: "Noah Tremblay-Clarke", title: "Process Engineer", city: "Edmonton", prov: "AB", email: "noah.tc@mail.example", phone: "(780) 555-0102",
+    { id: "c17", owner: "r1", name: "Noah Tremblay-Clarke", title: "Process Engineer", city: "Edmonton", prov: "AB", email: "noah.tc@mail.example", phone: "(780) 555-0102",
       years: 7, designations: ["P.Eng"], langs: ["English", "French"], auth: "Canadian citizen", status: "Passive",
       salary: { min: 130000, max: 145000, type: "annual" }, modes: ["On-site", "Hybrid"], relocate: false, notice: "4 weeks",
       skills: [S("Aspen HYSYS", 6), S("P&ID", 7), S("HAZOP", 5), S("Lean / Six Sigma", 3)],
@@ -474,7 +473,7 @@ function seed() {
       memory: [{ d: ago(75), tag: "Preference", t: "Will not do fly-in/fly-out. Fine with occasional plant visits." }],
       comms: [{ d: ago(75), type: "LinkedIn", s: "Short update, still passive." }],
       consent: consent(75, "Online form", "Express"), resume: "Noah_TC.pdf" },
-    { id: "c18", owner: "r3", name: "Grace Kim", title: "Project Controls Specialist", city: "Calgary", prov: "AB", email: "grace.kim@mail.example", phone: "(403) 555-0170",
+    { id: "c18", owner: "r1", name: "Grace Kim", title: "Project Controls Specialist", city: "Calgary", prov: "AB", email: "grace.kim@mail.example", phone: "(403) 555-0170",
       years: 6, designations: [], langs: ["English", "Korean"], auth: "Canadian citizen", status: "Active",
       salary: { min: 110000, max: 125000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
       skills: [S("Primavera P6", 6), S("Cost control", 6), S("Scheduling", 6), S("Stakeholder management", 4)],
@@ -482,7 +481,7 @@ function seed() {
       memory: [{ d: ago(28), tag: "Preference", t: "Hybrid, 2 days in office max." }],
       comms: [{ d: ago(28), type: "Meeting", s: "Coffee on Stephen Avenue. Active from November." }],
       consent: consent(28, "Verbal on call, confirmed by email", "Express"), resume: "Grace_Kim.pdf" },
-    { id: "c19", owner: "r3", name: "Jordan Bell", title: "Controls Engineer", city: "Calgary", prov: "AB", email: "jordan.bell@mail.example", phone: "(403) 555-0189",
+    { id: "c19", owner: "r1", name: "Jordan Bell", title: "Controls Engineer", city: "Calgary", prov: "AB", email: "jordan.bell@mail.example", phone: "(403) 555-0189",
       years: 8, designations: ["P.Eng"], langs: ["English"], auth: "Canadian citizen", status: "Active",
       salary: { min: 125000, max: 140000, type: "annual" }, modes: ["On-site", "Hybrid"], relocate: true, notice: "3 weeks",
       skills: [S("PLC", 8), S("SCADA", 7), S("Python", 3), S("Instrumentation", 8)],
@@ -539,19 +538,19 @@ function seed() {
       salary: { min: 105000, max: 125000, type: "annual" }, must: ["Revit MEP", "ASHRAE 90.1", "Energy modelling"], nice: ["HAP (Carrier)"], designations: ["P.Eng"], langs: [],
       status: "Open", opened: ago(4), posting: { ai: AI, vacancy: "existing", fr: false, text: "Institutional HVAC design (schools, long-term care)." },
       pipeline: [] },
-    { id: "j5", recruiters: ["r2"], manager: "m1", client: "k4", title: "Ingénieur(e) en automatisation", city: "Montréal", prov: "QC", modes: ["Hybrid"], type: "Permanent",
+    { id: "j5", recruiters: ["r1"], manager: "m1", client: "k4", title: "Ingénieur(e) en automatisation", city: "Montréal", prov: "QC", modes: ["Hybrid"], type: "Permanent",
       salary: { min: 105000, max: 130000, type: "annual" }, must: ["PLC", "SCADA"], nice: ["Power distribution design"], designations: ["ing. (OIQ)"], langs: ["French"],
       status: "Open", opened: ago(18), posting: { ai: AI, vacancy: "existing", fr: true, text: "Automatisation de postes et centrales. Membre de l'OIQ requis." },
       pipeline: [] /*j5*/ },
-    { id: "j6", recruiters: ["r2"], manager: "m1", client: "k5", title: "Mechanical Designer (6-month contract)", city: "Sherbrooke", prov: "QC", modes: ["On-site"], type: "Contract",
+    { id: "j6", recruiters: ["r1"], manager: "m1", client: "k5", title: "Mechanical Designer (6-month contract)", city: "Sherbrooke", prov: "QC", modes: ["On-site"], type: "Contract",
       salary: { min: 34, max: 40, type: "hourly" }, must: ["SolidWorks", "GD&T"], nice: ["Inventor"], designations: [], langs: [],
       status: "Open", opened: ago(6), posting: { ai: "", vacancy: "existing", fr: false, text: "Conception de gabarits et outillage. Contrat de 6 mois." },
       pipeline: [] },
-    { id: "j7", recruiters: ["r3"], manager: "m1", client: "k6", title: "Senior Geotechnical Engineer", city: "Vancouver", prov: "BC", modes: ["Hybrid"], type: "Permanent",
+    { id: "j7", recruiters: ["r1"], manager: "m1", client: "k6", title: "Senior Geotechnical Engineer", city: "Vancouver", prov: "BC", modes: ["Hybrid"], type: "Permanent",
       salary: { min: 130000, max: 155000, type: "annual" }, must: ["Foundation design", "Slope stability (Slide2)", "Site investigation"], nice: ["gINT"], designations: ["P.Eng"], langs: [],
       status: "Open", opened: ago(16), posting: { ai: AI, vacancy: "existing", fr: false, text: "Foundations and slope stability for Metro Vancouver infrastructure." },
       pipeline: [] /*j7*/ },
-    { id: "j8", recruiters: ["r3"], manager: "m1", client: "k7", title: "Controls Engineer", city: "Calgary", prov: "AB", modes: ["On-site", "Hybrid"], type: "Permanent",
+    { id: "j8", recruiters: ["r1"], manager: "m1", client: "k7", title: "Controls Engineer", city: "Calgary", prov: "AB", modes: ["On-site", "Hybrid"], type: "Permanent",
       salary: { min: 120000, max: 145000, type: "annual" }, must: ["PLC", "SCADA"], nice: ["Python", "Instrumentation"], designations: ["P.Eng"], langs: [],
       status: "Open", opened: ago(27), posting: { ai: "", vacancy: "existing", fr: false, text: "Controls for gas processing facilities. 25% field." },
       pipeline: [] }
@@ -567,7 +566,7 @@ function seed() {
     j6: [P("c12", "Submitted", 3)], j7: [P("c14", "Interview", 9)], j8: [P("c19", "Submitted", 17)]
   };
   jobs.forEach(j => { j.pipeline = seedPipe[j.id] || []; });
-  const prefBy = { "k1": [["m1", 60], ["r1", 18], ["m1", 60]], "k3": [["m1", 45], ["r1", 6], ["m1", 45]], "k4": [["m1", 90], ["r2", 20], ["m1", 90]] };
+  const prefBy = { "k1": [["m1", 60], ["r1", 18], ["m1", 60]], "k3": [["m1", 45], ["r1", 6], ["m1", 45]], "k4": [["m1", 90], ["r1", 20], ["m1", 90]] };
   clients.forEach(k => { k.prefs = k.prefs.map((t, i) => { const [by, d] = (prefBy[k.id] || [])[i] || ["m1", 40 + i * 7]; return { t, by, d: ago(d) }; }); });
   candidates.forEach(c => {
     c.linkedin = c.id === "c7" ? "" : `https://www.linkedin.com/in/${norm(c.name).replace(/[^a-z]+/g, "-")}-demo`;
@@ -932,7 +931,7 @@ function viewHome() {
     </section>`;
   }
   const examples = {
-    r1: ["P.Eng structural engineers in the GTA under 130k", "Candidates not contacted in 3 months", "Revit MEP designers open to hybrid", "Bilingual civil engineers in Ontario"],
+    r1: ["P.Eng structural engineers in the GTA under 130k", "Candidates not contacted in 3 months", "Bilingual project managers in Greater Montréal", "Engineers with PLC and SCADA, no LMIA"],
     r2: ["Bilingual project managers in Greater Montréal", "Engineers with PLC and SCADA, no LMIA", "Mechanical designers in Quebec", "Candidates not contacted in 2 months"],
     r3: ["P.Eng engineers in Alberta over 120k", "Geotechnical engineers in the Lower Mainland", "Controls engineers willing to relocate", "Candidates not contacted in 2 months"]
   }[me] || ["P.Eng engineers in Ontario", "Bilingual engineers in Quebec", "Engineers willing to relocate", "Candidates not contacted in 3 months"];

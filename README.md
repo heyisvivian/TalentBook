@@ -2,7 +2,7 @@
 
 A demo of a recruitment tool for Canadian agencies, engineering firms and in-house recruiting teams. Recruiters search the candidates they have worked with in plain English. Each candidate profile pulls together memory cards, contact history, skills, pain points, location, expected pay and work preferences, and ranks the candidate against open jobs.
 
-One TalentBook system serves one company (single tenant). The demo company is IV Recruitment, an engineering recruitment firm with recruiters in Toronto, Montréal and Calgary. Data from different companies is never mixed; inside the company, each recruiter manages their own desk.
+One TalentBook system serves one company (single tenant). The demo company is IV Recruitment, an engineering recruitment firm in Toronto placing engineers across Canada. The demo has one person per role: an admin, a manager and a recruiter. Data from different companies is never mixed; inside the company, each recruiter manages their own desk.
 
 This is a front-end demo with no backend. Open `index.html` in a browser. Data is seeded in the page and saved in the browser's localStorage.
 
@@ -14,9 +14,7 @@ Every account uses the password `demo`.
 |---|---|---|
 | Sarah Lin | Admin | Operations & Systems, Toronto |
 | David Ross | Manager | Head of Engineering Recruitment, Toronto |
-| Maya Chen | Recruiter | Structural, Civil & Construction, Toronto |
-| Julien Tremblay | Recruiter | Electrical & Automation, Montréal |
-| Priya Natarajan | Recruiter | Energy & Geotechnical, Calgary |
+| Maya Chen | Recruiter | Engineering recruitment, Toronto |
 
 | Action | Admin | Manager | Recruiter |
 |---|---|---|---|
