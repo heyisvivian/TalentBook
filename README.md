@@ -39,6 +39,15 @@ A pipeline entry is one candidate in one job, with a stage (Sourced, Contacted, 
 - **Job page**: everyone in that job's pipeline.
 - **Candidate profile**: every job the candidate is in, with a stage track and history.
 
+## Submitting a candidate to a client
+
+Moving a candidate to Submitted (or later), or pressing Submit, opens the submission form:
+
+1. **Consent for this submission.** Record how and when the candidate agreed to be put forward to this client for this role. The submission cannot go ahead until the recruiter confirms the candidate knows the client, the role and the pay range. Consent covers one client and one role.
+2. **Client copy.** A preview of exactly what the client receives. Phone, email, LinkedIn, street address and postal code are always removed, from the résumé and from the recruiter's summary. Options: initials instead of the full name, and whether to include expected pay. The text can be copied to paste into an email.
+
+The submission (date, sender, consent method and date, options) is saved on the pipeline entry and logged in the candidate's contact history. The sent profile can be reopened from the job, the pipeline board and the candidate profile. The Compliance page lists any candidate at Submitted or later with no consent on record.
+
 ## What the demo does
 
 - **Ask**: natural-language search such as "P.Eng structural engineers in the GTA under 130k" or "candidates not contacted in 3 months". The page shows how it read the query as removable chips. In the demo a rule-based parser stands in for the LLM.
