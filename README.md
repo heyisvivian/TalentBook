@@ -22,12 +22,14 @@ Every account uses the password `demo`.
 | Upload résumés and keep their own candidates | ✓ | ✓ | ✓ |
 | Edit a candidate record (owner only) | ✓ | ✓ | ✓ |
 | Move candidates through the pipeline | ✓ | ✓ | ✓ |
+| See client contacts, fees and guarantee terms | ✓ | ✓ | |
+| Log contacts and add notes on any candidate they can open | ✓ | ✓ | ✓ |
 | Add and edit clients | ✓ | ✓ | |
 | Add hiring preferences to their clients (each shows who added it and when) | ✓ | ✓ | ✓ |
 | Create jobs, change job status, assign recruiters | ✓ | ✓ | |
 | Add users and change roles | ✓ | | |
 
-Recruiters see only their own candidates and the jobs assigned to them. A client appears for a recruiter once they have a job with that client.
+Recruiters see only their own candidates and the jobs assigned to them. Every contact log entry and memory card records who added it, and anyone who can open the candidate sees the candidate's contact details and all notes. Recruiters see a client's name, preferences and jobs, but not its contact people, fees or guarantee terms. Logging a contact can set the next follow-up date; due follow-ups top the home page queue. A client appears for a recruiter once they have a job with that client.
 
 ## Pipeline
 

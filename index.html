@@ -209,6 +209,7 @@ button.card:hover { border-color: var(--accent); }
 .summary p { max-width: 75ch; }
 .memory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .memo { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; background: var(--surface); font-size: .88rem; }
+.memo-by { font-size: .74rem; color: var(--muted); }
 .memo-top { display: flex; justify-content: space-between; gap: 8px; font-size: .74rem; color: var(--muted); }
 .timeline { display: grid; gap: 0; }
 .tl { display: grid; grid-template-columns: 92px 18px minmax(0, 1fr); gap: 8px; font-size: .88rem; }
@@ -285,7 +286,7 @@ button.card:hover { border-color: var(--accent); }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v7";
+const STORE_KEY = "talentbook-demo-v8";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -568,7 +569,12 @@ function seed() {
   jobs.forEach(j => { j.pipeline = seedPipe[j.id] || []; });
   const prefBy = { "k1": [["m1", 60], ["r1", 18], ["m1", 60]], "k3": [["m1", 45], ["r1", 6], ["m1", 45]], "k4": [["m1", 90], ["r1", 20], ["m1", 90]] };
   clients.forEach(k => { k.prefs = k.prefs.map((t, i) => { const [by, d] = (prefBy[k.id] || [])[i] || ["m1", 40 + i * 7]; return { t, by, d: ago(d) }; }); });
+  const byManager = { c2: [1], c13: [0], c4: [0] };
+  const followUps = { c1: [3, "Send Lakeshore interview prep notes"], c2: [-2, "Check if her tower has topped out"], c8: [-10, "Ask about 2-day remote roles at Greenfield"], c9: [1, "Debrief after Hydro-Laurentide offer call"] };
   candidates.forEach(c => {
+    c.comms.forEach((x, i) => { x.by = (byManager[c.id] || []).includes(i) ? "m1" : c.owner; x.dir = x.dir || (x.type === "Email" && /inbound|received|sent updated/i.test(x.s) ? "Inbound" : "Outbound"); });
+    c.memory.forEach(m => { m.by = m.by || c.owner; });
+    if (followUps[c.id]) c.nextFollowUp = { d: addDays(ago(0), followUps[c.id][0]), note: followUps[c.id][1], by: c.owner };
     c.linkedin = c.id === "c7" ? "" : `https://www.linkedin.com/in/${norm(c.name).replace(/[^a-z]+/g, "-")}-demo`;
     c.resumeDate = c.consent.date;
   });
@@ -592,8 +598,8 @@ const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ
 const initials = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 const ROLE_LABEL = { admin: "Admin", manager: "Manager", recruiter: "Recruiter" };
 const PERMS = {
-  admin: ["viewAll", "addClient", "editClient", "addJob", "editJob", "assign", "manageUsers"],
-  manager: ["viewAll", "addClient", "editClient", "addJob", "editJob", "assign"],
+  admin: ["viewAll", "viewClientContacts", "addClient", "editClient", "addJob", "editJob", "assign", "manageUsers"],
+  manager: ["viewAll", "viewClientContacts", "addClient", "editClient", "addJob", "editJob", "assign"],
   recruiter: []
 };
 const role = () => recruiter(me)?.role || "recruiter";
@@ -604,6 +610,9 @@ const visClients = () => can("viewAll") ? DB.clients : DB.clients.filter(k => vi
 const recruiterUsers = () => DB.recruiters.filter(u => u.role === "recruiter");
 const prefOf = p => typeof p === "string" ? { t: p } : p;
 const prefLi = p => { const x = prefOf(p); return `<li><span>${esc(x.t)}${x.by || x.d ? `<span class="by">${esc(x.by ? recruiter(x.by)?.name || "Former user" : "")}${x.by && x.d ? " · " : ""}${x.d ? fmtDate(x.d) : ""}</span>` : ""}</span></li>`; };
+const userName = id => recruiter(id)?.name || "Former user";
+const followDue = c => c.nextFollowUp && daysSince(c.nextFollowUp.d) >= 0;
+const needsFollowUp = c => c.status !== "Placed" && c.status !== "Do not contact" && (followDue(c) || recency(c).days >= 60);
 const firstName = id => (recruiter(id)?.name || "Unassigned").split(" ")[0];
 const recruiter = id => DB.recruiters.find(r => r.id === id);
 const cand = id => DB.candidates.find(c => c.id === id);
@@ -921,7 +930,8 @@ function candRow(c, extra = {}) {
 
 function viewHome() {
   const cs = visCands();
-  const follow = cs.filter(c => recency(c).days >= 60 && c.status !== "Placed").sort((a, b) => recency(b).days - recency(a).days);
+  const follow = cs.filter(needsFollowUp).sort((a, b) => (followDue(b) - followDue(a)) || recency(b).days - recency(a).days);
+  const followWhy = c => followDue(c) ? [`Follow-up ${daysSince(c.nextFollowUp.d) ? `overdue since ${fmtDate(c.nextFollowUp.d)}` : "due today"}: ${c.nextFollowUp.note || "no note"}`] : [`No contact for ${recency(c).label.replace(" ago", "")}`];
   const consentIssues = cs.filter(c => consentState(c).cls !== "good");
   const openJobs = visJobs().filter(j => j.status === "Open");
   const r = recruiter(me);
@@ -944,7 +954,7 @@ function viewHome() {
     <div class="page-head"><div><h1>Good ${TODAY.getHours() < 12 ? "morning" : "afternoon"}, ${esc(r.name.split(" ")[0])}</h1><p>${fmtDate(TODAY.toISOString().slice(0, 10))} · ${esc(r.desk)}</p></div></div>
     <div class="stats">
       <button class="stat" data-go="candidates"><b>${cs.length}</b><span>${can("viewAll") ? "Candidates across the team" : "Candidates on your desk"}</span></button>
-      <button class="stat" data-q="Candidates not contacted in 2 months"><b style="color:var(--warn)">${follow.length}</b><span>Need a follow-up (60+ days)</span></button>
+      <button class="stat" data-q="Candidates not contacted in 2 months"><b style="color:var(--warn)">${follow.length}</b><span>Follow-ups due or 60+ days silent</span></button>
       <button class="stat" data-go="pipeline"><b>${pe.filter(x => active.includes(x.p.stage) && x.p.stage !== "Placed").length}</b><span>Candidates in active pipelines</span></button>
       <button class="stat" data-go="compliance"><b style="color:${consentIssues.length ? "var(--bad)" : "var(--good)"}">${consentIssues.length}</b><span>Consent or retention to fix</span></button>
     </div>
@@ -960,8 +970,8 @@ function viewHome() {
       <div class="stage-strip">${active.map(st => { const n = pe.filter(x => x.p.stage === st).length; return `<button class="stage-cell" data-go="pipeline"><b>${n}</b><span>${st}</span></button>`; }).join("")}</div>
       ${pe.filter(stuck).length ? `<p class="why" style="margin-top:10px;color:var(--warn)">${pe.filter(stuck).length} candidate${pe.filter(stuck).length === 1 ? " has" : "s have"} been in the same stage for more than 14 days.</p>` : ""}</section>
     <div class="two">
-      <section class="panel"><div class="panel-head"><h2>Follow-up queue</h2><span class="muted" style="font-size:.82rem">Longest silence first</span></div>
-        <div class="list">${follow.length ? follow.slice(0, 5).map(c => candRow(c)).join("") : `<div class="empty">Everyone has heard from you in the last 60 days.</div>`}</div></section>
+      <section class="panel"><div class="panel-head"><h2>Follow-up queue</h2><span class="muted" style="font-size:.82rem">Due follow-ups first, then longest silence</span></div>
+        <div class="list">${follow.length ? follow.slice(0, 6).map(c => candRow(c, { why: followWhy(c) })).join("") : `<div class="empty">Everyone has heard from you in the last 60 days.</div>`}</div></section>
       <section class="panel"><div class="panel-head"><h2>${can("viewAll") ? "Open jobs" : "Jobs assigned to you"}</h2></div>
         <div class="list">${openJobs.map(j => { const top = visCands().map(c => matchScore(c, j).total).sort((a, b) => b - a)[0] || 0;
           return `<button class="card" data-job="${j.id}"><span class="row"><strong>${esc(j.title)}</strong></span><span class="muted" style="font-size:.82rem">${esc(client(j.client).name)} · ${esc(j.city)}, ${j.prov} · <span class="num">${fmtPay(j.salary)}</span></span><span class="row" style="font-size:.8rem"><span class="bar"><i style="width:${top}%"></i></span>Best match ${top}</span></button>`; }).join("")}</div></section>
@@ -1005,7 +1015,8 @@ function aiSummary(c) {
   return `${esc(first)} is ${/^[aeiou]/i.test(c.title) ? "an" : "a"} ${esc(c.title)}${desig.length ? ` (${esc(desig.join(", "))})` : ""} in ${esc(c.city)} with ${c.years} years' experience, strongest in ${esc(c.skills.slice(0, 3).map(s => s.n).join(", "))}. `
     + `Expects ${fmtPay(c.salary)}${c.salary.type === "annual" ? " base" : ""}, wants ${esc(c.modes.join(" or ").toLowerCase())} work${c.relocate ? " and would relocate" : ""}. `
     + (c.pains[0] ? `Main reason to move: ${esc(c.pains[0].charAt(0).toLowerCase() + c.pains[0].slice(1))}. ` : "")
-    + (lc ? `Last contact ${r.label.toLowerCase()} by ${lc.type.toLowerCase()}: ${esc(lc.s)} ` : "")
+    + (lc ? `Last contact ${r.label.toLowerCase()} (${lc.type.toLowerCase()} by ${esc(userName(lc.by))}): ${esc(lc.s)} ` : "")
+    + (c.nextFollowUp ? `Next follow-up ${fmtDate(c.nextFollowUp.d)}${c.nextFollowUp.note ? ": " + esc(c.nextFollowUp.note) : ""}. ` : "")
     + (best && best.m.total >= 50 ? `Best open match: <strong>${esc(best.j.title)}</strong> at ${esc(client(best.j.client).name)} (${best.m.total}/100).` : "No strong match among your open jobs.");
 }
 
@@ -1023,8 +1034,8 @@ function viewCandidate() {
     <div class="profile-head">
       <span class="avatar lg">${initials(c.name)}</span>
       <div style="min-width:0"><h1>${esc(c.name)}</h1><p class="muted">${esc(c.title)} · ${esc(c.city)}, ${c.prov} · ${c.years} years</p>
-        <div class="row" style="margin-top:6px"><span class="chip ${r.cls}"><span class="dot ${r.cls}"></span>Last contact ${r.label.toLowerCase()}</span><span class="chip">${esc(c.status)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}<span class="chip ${k.cls}">${k.label}</span>${ed ? "" : `<span class="chip warn">${esc(firstName(c.owner))}'s candidate · view only</span>`}</div></div>
-      ${!ed ? "" : `<div class="row"><select class="input" id="status-sel" style="width:auto" aria-label="Candidate status">${["Active", "Passive", "Placed", "Do not contact"].map(s => `<option ${s === c.status ? "selected" : ""}>${s}</option>`).join("")}</select><button class="btn primary" data-act="log">Log contact</button></div>`}
+        <div class="row" style="margin-top:6px"><span class="chip ${r.cls}"><span class="dot ${r.cls}"></span>Last contact ${r.label.toLowerCase()}</span><span class="chip">${esc(c.status)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}<span class="chip ${k.cls}">${k.label}</span>${c.nextFollowUp ? `<span class="chip ${followDue(c) ? "bad" : "outline"}">Follow-up ${followDue(c) ? "due" : ""} ${fmtDate(c.nextFollowUp.d)}</span>` : ""}${ed ? "" : `<span class="chip warn">Owner: ${esc(userName(c.owner))}</span>`}</div></div>
+      ${!ed ? `<div class="row"><button class="btn primary" data-act="log">Log contact</button></div>` : `<div class="row"><select class="input" id="status-sel" style="width:auto" aria-label="Candidate status">${["Active", "Passive", "Placed", "Do not contact"].map(s => `<option ${s === c.status ? "selected" : ""}>${s}</option>`).join("")}</select><button class="btn primary" data-act="log">Log contact</button></div>`}
     </div>
     <div class="row">
       <button class="btn" data-act="view-resume">${icons.doc}View résumé</button>
@@ -1035,21 +1046,23 @@ function viewCandidate() {
     <div class="summary"><span class="eyebrow">AI summary</span><p>${aiSummary(c)}</p></div>
     <div class="two">
       <div class="stack">
-        <section class="panel"><div class="panel-head"><h2>Memory cards</h2><span class="muted" style="font-size:.82rem">Things to remember before the next call</span><span class="spacer"></span>${ed ? `<button class="btn sm" data-act="add-memo">Add card</button>` : ""}</div>
+        <section class="panel"><div class="panel-head"><h2>Memory cards</h2><span class="muted" style="font-size:.82rem">Things to remember before the next call</span><span class="spacer"></span><button class="btn sm" data-act="add-memo">Add card</button></div>
           ${ui.modal === "memo" ? `<form id="memo-form" class="stack" style="margin-bottom:12px"><div class="form-grid"><div class="field"><label for="memo-tag">Type</label><select class="input" id="memo-tag">${["Preference", "Compensation", "Pain point", "Work authorization", "Client feedback", "Personal"].map(t => `<option>${t}</option>`).join("")}</select></div><div class="field full"><label for="memo-text">Note</label><textarea class="input" id="memo-text" required placeholder="e.g. Wants to avoid downtown commute"></textarea></div></div><div class="row"><button class="btn primary sm">Save card</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button></div><p class="demo-note">Do not record age, health, family status or other protected grounds unless the candidate offered it and it matters to the job.</p></form>` : ""}
-          <div class="memory-grid">${memory.map(m => `<div class="memo"><div class="memo-top"><span class="chip">${esc(m.tag)}</span><span>${fmtDate(m.d)}</span></div><p>${esc(m.t)}</p></div>`).join("") || `<div class="empty">No memory cards yet.</div>`}</div>
+          <div class="memory-grid">${memory.map(m => `<div class="memo"><div class="memo-top"><span class="chip">${esc(m.tag)}</span><span>${fmtDate(m.d)}</span></div><p>${esc(m.t)}</p><span class="memo-by">Added by ${esc(userName(m.by))}</span></div>`).join("") || `<div class="empty">No memory cards yet.</div>`}</div>
         </section>
         <div class="two" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
           <section class="panel"><h2>Pain points</h2><ul class="pain">${c.pains.map(p => `<li>${esc(p)}</li>`).join("") || "<li>None recorded</li>"}</ul></section>
           <section class="panel"><h2>What would make them move</h2><ul class="pain moti">${c.motives.map(p => `<li>${esc(p)}</li>`).join("") || "<li>None recorded</li>"}</ul></section>
         </div>
-        <section class="panel"><div class="panel-head"><h2>Communication history</h2><span class="spacer"></span>${ed ? `<button class="btn sm" data-act="log">Log contact</button>` : ""}</div>
-          ${ui.modal === "log" ? `<form id="log-form" class="stack" style="margin-bottom:14px"><div class="form-grid"><div class="field"><label for="log-type">Channel</label><select class="input" id="log-type">${["Call", "Email", "Meeting", "LinkedIn", "SMS"].map(t => `<option>${t}</option>`).join("")}</select></div><div class="field"><label for="log-date">Date</label><input class="input" type="date" id="log-date" value="${TODAY.toISOString().slice(0, 10)}"></div><div class="field full"><label for="log-text">Summary</label><textarea class="input" id="log-text" required placeholder="What did you discuss? Any change in salary, availability or interest?"></textarea></div></div><label class="row" style="font-size:.85rem"><input type="checkbox" id="log-memo"> Also save as a memory card</label><div class="row"><button class="btn primary sm">Save</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button></div>${c.consent?.casl !== "Express" ? `<p class="notice warn">CASL: only implied consent for electronic messages. Ask for express consent before sending job alerts by email or SMS.</p>` : ""}</form>` : ""}
-          <div class="timeline">${comms.map(x => `<div class="tl"><span class="tl-date">${fmtDate(x.d)}</span><span class="tl-line"><i></i></span><div class="tl-body"><b>${esc(x.type)}</b> <span class="muted" style="font-size:.78rem">· ${daysSince(x.d)}d ago</span><p>${esc(x.s)}</p></div></div>`).join("") || `<div class="empty">No contact logged yet.</div>`}</div>
+        <section class="panel"><div class="panel-head"><h2>Communication history</h2><span class="spacer"></span><button class="btn sm" data-act="log">Log contact</button></div>
+          ${ui.modal === "log" ? `<form id="log-form" class="stack" style="margin-bottom:14px"><div class="form-grid"><div class="field"><label for="log-type">Channel</label><select class="input" id="log-type">${["Call", "Email", "Meeting", "LinkedIn", "SMS"].map(t => `<option>${t}</option>`).join("")}</select></div><div class="field"><label for="log-date">Date</label><input class="input" type="date" id="log-date" value="${TODAY.toISOString().slice(0, 10)}"></div><div class="field"><label for="log-dir">Direction</label><select class="input" id="log-dir"><option>Outbound</option><option>Inbound</option></select></div><div class="field"><label for="log-next">Next follow-up (optional)</label><input class="input" type="date" id="log-next"></div><div class="field full"><label for="log-next-note">Follow-up note</label><input class="input" id="log-next-note" placeholder="e.g. Call after her interview on Thursday"></div><div class="field full"><label for="log-text">Summary</label><textarea class="input" id="log-text" required placeholder="What did you discuss? Any change in salary, availability or interest?"></textarea></div></div><label class="row" style="font-size:.85rem"><input type="checkbox" id="log-memo"> Also save as a memory card</label><p class="demo-note">Logged as ${esc(userName(me))}. Everyone who can open this candidate sees this entry.</p><div class="row"><button class="btn primary sm">Save</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button></div>${c.consent?.casl !== "Express" ? `<p class="notice warn">CASL: only implied consent for electronic messages. Ask for express consent before sending job alerts by email or SMS.</p>` : ""}</form>` : ""}
+          <div class="timeline">${comms.map(x => `<div class="tl"><span class="tl-date">${fmtDate(x.d)}</span><span class="tl-line"><i></i></span><div class="tl-body"><div class="row" style="gap:6px"><b>${esc(x.type)}</b>${x.dir ? `<span class="chip outline" style="font-size:.7rem;padding:0 7px">${esc(x.dir)}</span>` : ""}<span class="muted" style="font-size:.78rem">by <strong style="color:var(--fg)">${esc(userName(x.by))}</strong> · ${daysSince(x.d)}d ago</span></div><p>${esc(x.s)}</p></div></div>`).join("") || `<div class="empty">No contact logged yet.</div>`}</div>
         </section>
       </div>
       <div class="stack">
         <section class="panel"><h2>Key facts</h2><dl class="kv">
+          <dt>Owner</dt><dd>${esc(userName(c.owner))}</dd>
+          <dt>Next follow-up</dt><dd>${c.nextFollowUp ? `${fmtDate(c.nextFollowUp.d)} ${followDue(c) ? `<span class="chip bad">due</span>` : ""}<br><span class="muted" style="font-size:.8rem">${esc(c.nextFollowUp.note || "")}${c.nextFollowUp.note ? " · " : ""}set by ${esc(firstName(c.nextFollowUp.by))}</span>` : `<span class="muted">None set</span>`}</dd>
           <dt>Expected pay</dt><dd class="num">${fmtPay(c.salary)}${c.salary.type === "annual" ? " CAD / yr" : " CAD"}</dd>
           <dt>Location</dt><dd>${esc(c.city)}, ${c.prov}</dd>
           <dt>Work mode</dt><dd>${c.modes.join(" / ")}</dd>
@@ -1123,7 +1136,7 @@ function viewJob() {
       <div class="stack">
         ${can("assign") ? `<section class="panel"><h2>Assigned recruiters</h2><div class="stack" style="gap:6px">${recruiterUsers().map(u => `<label class="row" style="font-size:.88rem"><input type="checkbox" data-assign="${u.id}" ${j.recruiters.includes(u.id) ? "checked" : ""}> ${esc(u.name)} <span class="muted" style="font-size:.78rem">${esc(u.desk)}</span></label>`).join("")}</div><p class="demo-note" style="margin-top:8px">Assigned recruiters see this job and can work it with their own candidates.</p></section>` : `<section class="panel"><h2>Assigned to</h2><p>${esc(j.recruiters.map(id => recruiter(id)?.name).join(", "))}</p><p class="muted" style="font-size:.8rem;margin-top:6px">Managed by ${esc(recruiter(j.manager)?.name || "—")}</p></section>`}
         <section class="panel"><div class="panel-head"><h2>Pipeline</h2><span class="spacer"></span><button class="btn ghost sm" data-pipejob="${j.id}">Board view</button></div>${j.pipeline.length ? `<div class="list">${j.pipeline.map((p, i) => { const c = cand(p.c); const mineOrMgr = c.owner === me || can("viewAll"); return `<div class="row"><button class="btn ghost sm" style="flex:1;justify-content:flex-start;color:var(--fg);min-width:0" data-open="${c.id}" ${visCands().includes(c) ? "" : "disabled"}>${esc(c.name)}${c.owner !== me ? ` <span class="muted" style="font-weight:500">· ${esc(firstName(c.owner))}</span>` : ""}</button><span class="muted num" style="font-size:.75rem">${daysSince(p.since)}d</span>${mineOrMgr ? `<select class="input" style="width:auto" data-pstage="${j.id}:${i}" aria-label="Stage for ${esc(c.name)}">${STAGES.map(s => `<option ${s === p.stage ? "selected" : ""}>${s}</option>`).join("")}</select>` : `<span class="chip">${p.stage}</span>`}</div>`; }).join("")}</div>` : `<div class="empty">Shortlist candidates from the ranking to start the pipeline.</div>`}</section>
-        <section class="panel"><h2>What ${esc(k.name)} cares about</h2><ul class="pain moti">${k.prefs.map(prefLi).join("")}</ul>${k.avoid.length ? `<h3 style="margin:12px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}<p class="muted" style="font-size:.8rem;margin-top:10px">Fee ${esc(k.fee)} · guarantee ${esc(k.guarantee)}</p></section>
+        <section class="panel"><h2>What ${esc(k.name)} cares about</h2><ul class="pain moti">${k.prefs.map(prefLi).join("")}</ul>${k.avoid.length ? `<h3 style="margin:12px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}${can("viewClientContacts") ? `<p class="muted" style="font-size:.8rem;margin-top:10px">Fee ${esc(k.fee)} · guarantee ${esc(k.guarantee)}</p>` : ""}</section>
         <section class="panel"><h2>Job posting check</h2><p class="muted" style="font-size:.8rem;margin-bottom:6px">Rules for ${j.prov} postings</p>${postingChecks(j).map(([s, t]) => `<div class="check"><span class="ic ${s}">${s === "good" ? "✓" : s === "warn" ? "!" : "✕"}</span><span>${esc(t)}</span></div>`).join("")}
           <dl class="kv" style="margin-top:10px"><dt>Posting text</dt><dd>${esc(j.posting.text)}</dd><dt>AI statement</dt><dd>${esc(j.posting.ai || "None")}</dd></dl></section>
       </div>
@@ -1163,7 +1176,7 @@ function viewPipeline() {
 function viewTeam() {
   if (!can("manageUsers")) return `<div class="empty">Only admins can manage the team.</div>`;
   const rows = [["See and search every recruiter's candidates", 1, 1, 0], ["Upload résumés and keep their own candidates", 1, 1, 1], ["Edit a candidate record (owner only)", 1, 1, 1], ["Move candidates through the pipeline", 1, 1, 1],
-    ["Add and edit clients", 1, 1, 0], ["Add hiring preferences to their clients", 1, 1, 1], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Add users and change roles", 1, 0, 0]];
+    ["See client contacts, fees and terms", 1, 1, 0], ["Log contacts and add notes on any candidate they can open", 1, 1, 1], ["Add and edit clients", 1, 1, 0], ["Add hiring preferences to their clients", 1, 1, 1], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Add users and change roles", 1, 0, 0]];
   return `<div class="page-head"><div><h1>Team &amp; roles</h1><p>Who can do what in ${esc(DB.company.name)}.</p></div></div>
     <section class="panel"><h2>Permissions</h2><div class="table-wrap"><table><thead><tr><th>Action</th><th>Admin</th><th>Manager</th><th>Recruiter</th></tr></thead><tbody>
       ${rows.map(([a, ...r]) => `<tr><td>${a}</td>${r.map(v => `<td>${v ? `<span class="ic good" style="display:inline-grid;width:20px;height:20px;border-radius:50%;place-items:center;font-size:.72rem">✓</span>` : `<span class="muted">—</span>`}</td>`).join("")}</tr>`).join("")}
@@ -1248,8 +1261,8 @@ function viewClient() {
         <section class="panel"><h2>Jobs</h2><div class="list">${js.length ? "" : `<div class="empty">No jobs for this client yet.</div>`}${js.map(j => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1">${esc(j.title)}</strong><span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span></span><span class="muted" style="font-size:.82rem">${esc(j.city)} · <span class="num">${fmtPay(j.salary)}</span> · ${j.pipeline.length} in pipeline</span></button>`).join("")}</div></section>
       </div>
       <div class="stack">
-        <section class="panel"><h2>Contacts</h2>${k.contacts.length ? "" : `<div class="empty">No contact added yet.</div>`}${k.contacts.map(p => `<div class="me" style="margin-bottom:8px"><span class="avatar">${initials(p.n)}</span><div><strong>${esc(p.n)}</strong><span>${esc(p.r)} · ${esc(p.e)}</span></div></div>`).join("")}</section>
-        <section class="panel"><h2>Terms</h2><dl class="kv"><dt>Fee</dt><dd>${esc(k.fee)}</dd><dt>Guarantee</dt><dd>${esc(k.guarantee)}</dd><dt>Last contact</dt><dd>${fmtDate(k.lastContact)}</dd></dl></section>
+        ${!can("viewClientContacts") ? `<section class="panel"><h2>Client contacts &amp; terms</h2><p class="muted">Contact people, fees and guarantee terms are managed by your account manager, ${esc(userName(k.owner))}. Ask them to arrange interviews or pass on client feedback.</p></section>` : `<section class="panel"><h2>Contacts</h2>${k.contacts.length ? "" : `<div class="empty">No contact added yet.</div>`}${k.contacts.map(p => `<div class="me" style="margin-bottom:8px"><span class="avatar">${initials(p.n)}</span><div><strong>${esc(p.n)}</strong><span>${esc(p.r)} · ${esc(p.e)}</span></div></div>`).join("")}</section>
+        <section class="panel"><h2>Terms</h2><dl class="kv"><dt>Fee</dt><dd>${esc(k.fee)}</dd><dt>Guarantee</dt><dd>${esc(k.guarantee)}</dd><dt>Last contact</dt><dd>${fmtDate(k.lastContact)}</dd></dl></section>`}
       </div>
     </div>`;
 }
@@ -1541,11 +1554,13 @@ document.addEventListener("submit", e => {
     case "ask-form": doSearch(v("ask-q")); break;
     case "log-form": {
       const c = cand(ui.id), s = v("log-text"), dt = v("log-date") || ago(0);
-      c.comms.push({ d: dt, type: v("log-type"), s });
-      if (document.getElementById("log-memo").checked) c.memory.push({ d: dt, tag: "Preference", t: s });
+      c.comms.push({ d: dt, type: v("log-type"), dir: v("log-dir"), s, by: me });
+      if (document.getElementById("log-memo").checked) c.memory.push({ d: dt, tag: "Preference", t: s, by: me });
+      if (v("log-next")) c.nextFollowUp = { d: v("log-next"), note: v("log-next-note"), by: me };
+      else if (c.nextFollowUp && followDue(c)) delete c.nextFollowUp;
       ui.modal = null; save(); toast("Contact logged"); break;
     }
-    case "memo-form": { cand(ui.id).memory.push({ d: ago(0), tag: v("memo-tag"), t: v("memo-text") }); ui.modal = null; save(); toast("Memory card saved"); break; }
+    case "memo-form": { cand(ui.id).memory.push({ d: ago(0), tag: v("memo-tag"), t: v("memo-text"), by: me }); ui.modal = null; save(); toast("Memory card saved"); break; }
     case "li-form": {
       const u = cleanLinkedIn(v("li-url"));
       if (u === null) { ui.liErr = "Use a profile link like https://www.linkedin.com/in/name"; render(); return; }
