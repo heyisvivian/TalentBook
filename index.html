@@ -220,6 +220,7 @@ button.card:hover { border-color: var(--accent); }
 .pain { display: grid; gap: 6px; padding: 0; margin: 0; list-style: none; }
 .pain li { display: flex; gap: 8px; font-size: .88rem; }
 .pain li::before { content: ""; width: 6px; height: 6px; margin-top: 8px; border-radius: 2px; background: var(--warn); flex: none; }
+.pain .by { display: block; font-size: .74rem; color: var(--muted); margin-top: 1px; }
 .pain.moti li::before { background: var(--good); }
 .skill-list { display: grid; gap: 6px; }
 .skill { display: grid; grid-template-columns: minmax(0,1fr) 70px auto; gap: 8px; align-items: center; font-size: .86rem; }
@@ -283,7 +284,7 @@ button.card:hover { border-color: var(--accent); }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v5";
+const STORE_KEY = "talentbook-demo-v6";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -566,6 +567,8 @@ function seed() {
     j6: [P("c12", "Submitted", 3)], j7: [P("c14", "Interview", 9)], j8: [P("c19", "Submitted", 17)]
   };
   jobs.forEach(j => { j.pipeline = seedPipe[j.id] || []; });
+  const prefBy = { "k1": [["m1", 60], ["r1", 18], ["m1", 60]], "k3": [["m1", 45], ["r1", 6], ["m1", 45]], "k4": [["m1", 90], ["r2", 20], ["m1", 90]] };
+  clients.forEach(k => { k.prefs = k.prefs.map((t, i) => { const [by, d] = (prefBy[k.id] || [])[i] || ["m1", 40 + i * 7]; return { t, by, d: ago(d) }; }); });
   candidates.forEach(c => {
     c.linkedin = c.id === "c7" ? "" : `https://www.linkedin.com/in/${norm(c.name).replace(/[^a-z]+/g, "-")}-demo`;
     c.resumeDate = c.consent.date;
@@ -600,6 +603,8 @@ const visCands = () => can("viewAll") ? DB.candidates : DB.candidates.filter(c =
 const visJobs = () => can("viewAll") ? DB.jobs : DB.jobs.filter(j => j.recruiters.includes(me));
 const visClients = () => can("viewAll") ? DB.clients : DB.clients.filter(k => visJobs().some(j => j.client === k.id));
 const recruiterUsers = () => DB.recruiters.filter(u => u.role === "recruiter");
+const prefOf = p => typeof p === "string" ? { t: p } : p;
+const prefLi = p => { const x = prefOf(p); return `<li><span>${esc(x.t)}${x.by || x.d ? `<span class="by">${esc(x.by ? recruiter(x.by)?.name || "Former user" : "")}${x.by && x.d ? " · " : ""}${x.d ? fmtDate(x.d) : ""}</span>` : ""}</span></li>`; };
 const firstName = id => (recruiter(id)?.name || "Unassigned").split(" ")[0];
 const recruiter = id => DB.recruiters.find(r => r.id === id);
 const cand = id => DB.candidates.find(c => c.id === id);
@@ -1115,7 +1120,7 @@ function viewJob() {
       <div class="stack">
         ${can("assign") ? `<section class="panel"><h2>Assigned recruiters</h2><div class="stack" style="gap:6px">${recruiterUsers().map(u => `<label class="row" style="font-size:.88rem"><input type="checkbox" data-assign="${u.id}" ${j.recruiters.includes(u.id) ? "checked" : ""}> ${esc(u.name)} <span class="muted" style="font-size:.78rem">${esc(u.desk)}</span></label>`).join("")}</div><p class="demo-note" style="margin-top:8px">Assigned recruiters see this job and can work it with their own candidates.</p></section>` : `<section class="panel"><h2>Assigned to</h2><p>${esc(j.recruiters.map(id => recruiter(id)?.name).join(", "))}</p><p class="muted" style="font-size:.8rem;margin-top:6px">Managed by ${esc(recruiter(j.manager)?.name || "—")}</p></section>`}
         <section class="panel"><div class="panel-head"><h2>Pipeline</h2><span class="spacer"></span><button class="btn ghost sm" data-pipejob="${j.id}">Board view</button></div>${j.pipeline.length ? `<div class="list">${j.pipeline.map((p, i) => { const c = cand(p.c); const mineOrMgr = c.owner === me || can("viewAll"); return `<div class="row"><button class="btn ghost sm" style="flex:1;justify-content:flex-start;color:var(--fg);min-width:0" data-open="${c.id}" ${visCands().includes(c) ? "" : "disabled"}>${esc(c.name)}${c.owner !== me ? ` <span class="muted" style="font-weight:500">· ${esc(firstName(c.owner))}</span>` : ""}</button><span class="muted num" style="font-size:.75rem">${daysSince(p.since)}d</span>${mineOrMgr ? `<select class="input" style="width:auto" data-pstage="${j.id}:${i}" aria-label="Stage for ${esc(c.name)}">${STAGES.map(s => `<option ${s === p.stage ? "selected" : ""}>${s}</option>`).join("")}</select>` : `<span class="chip">${p.stage}</span>`}</div>`; }).join("")}</div>` : `<div class="empty">Shortlist candidates from the ranking to start the pipeline.</div>`}</section>
-        <section class="panel"><h2>What ${esc(k.name)} cares about</h2><ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>${k.avoid.length ? `<h3 style="margin:12px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}<p class="muted" style="font-size:.8rem;margin-top:10px">Fee ${esc(k.fee)} · guarantee ${esc(k.guarantee)}</p></section>
+        <section class="panel"><h2>What ${esc(k.name)} cares about</h2><ul class="pain moti">${k.prefs.map(prefLi).join("")}</ul>${k.avoid.length ? `<h3 style="margin:12px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}<p class="muted" style="font-size:.8rem;margin-top:10px">Fee ${esc(k.fee)} · guarantee ${esc(k.guarantee)}</p></section>
         <section class="panel"><h2>Job posting check</h2><p class="muted" style="font-size:.8rem;margin-bottom:6px">Rules for ${j.prov} postings</p>${postingChecks(j).map(([s, t]) => `<div class="check"><span class="ic ${s}">${s === "good" ? "✓" : s === "warn" ? "!" : "✕"}</span><span>${esc(t)}</span></div>`).join("")}
           <dl class="kv" style="margin-top:10px"><dt>Posting text</dt><dd>${esc(j.posting.text)}</dd><dt>AI statement</dt><dd>${esc(j.posting.ai || "None")}</dd></dl></section>
       </div>
@@ -1222,7 +1227,7 @@ function viewClients() {
   return `<div class="page-head"><div><h1>${can("viewAll") ? "Clients" : "My clients"}</h1><p>${can("viewAll") ? "Every client of the company, with preferences, contacts and terms." : "Clients of the jobs assigned to you. Managers add and edit clients."}</p></div><span class="spacer"></span>${can("addClient") ? `<button class="btn primary" data-act="add-client">+ Add client</button>` : ""}</div>
     <div class="cards">${visClients().map(k => { const open = DB.jobs.filter(j => j.client === k.id && j.status === "Open"); const d = daysSince(k.lastContact);
       return `<button class="card" data-client="${k.id}"><strong style="font-size:1rem">${esc(k.name)}</strong><span class="muted" style="font-size:.84rem">${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size ? k.size + " employees" : "size not set"}</span>
-        <ul class="pain moti">${k.prefs.slice(0, 2).map(p => `<li>${esc(p)}</li>`).join("")}</ul>
+        <ul class="pain moti">${k.prefs.slice(0, 2).map(p => `<li>${esc(prefOf(p).t)}</li>`).join("")}</ul>
         <span class="row" style="font-size:.8rem"><span class="chip">${open.length} open job${open.length === 1 ? "" : "s"}</span><span class="row" style="gap:6px"><span class="dot ${d <= 30 ? "good" : "warn"}"></span>Last contact ${d} days ago</span></span></button>`; }).join("")}</div>`;
 }
 function viewClient() {
@@ -1233,7 +1238,7 @@ function viewClient() {
     <div class="page-head"><div><h1>${esc(k.name)}</h1><p>${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size ? k.size + " employees" : "size not set"} · account manager ${esc(recruiter(k.owner)?.name || "—")}</p></div><span class="spacer"></span>${can("addJob") ? `<button class="btn primary" data-act="add-job" data-client-id="${k.id}">+ New job for this client</button>` : ""}</div>
     <div class="two">
       <div class="stack">
-        <section class="panel"><div class="panel-head"><h2>Hiring preferences</h2></div>${k.prefs.length ? `<ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : `<p class="muted">No preferences yet.</p>`}
+        <section class="panel"><div class="panel-head"><h2>Hiring preferences</h2></div>${k.prefs.length ? `<ul class="pain moti">${k.prefs.map(prefLi).join("")}</ul>` : `<p class="muted">No preferences yet.</p>`}
           ${k.avoid.length ? `<h3 style="margin:14px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
           ${!visClients().includes(k) ? "" : `<form id="pref-form" class="row" style="margin-top:14px"><input class="input" id="pref-text" style="flex:1;min-width:180px" placeholder="Add a preference, e.g. Prefers candidates within 45 min of office" required><button class="btn sm">Add</button></form>`}
           <p class="demo-note" style="margin-top:8px">Keep preferences job-related. Requests based on age, gender, origin, religion, family status or disability breach human rights codes and should be declined.</p></section>
@@ -1562,10 +1567,10 @@ document.addEventListener("submit", e => {
       const lines = id => v(id).split("\n").map(x => x.trim()).filter(Boolean);
       const k = { id: uid("k"), owner: me, name: v("k-name"), industry: v("k-industry") || "Not set", city: v("k-city"), prov: v("k-prov"), size: +v("k-size") || 0,
         contacts: v("k-cname") ? [{ n: v("k-cname"), r: v("k-crole") || "Hiring contact", e: v("k-cemail") }] : [],
-        prefs: lines("k-prefs"), avoid: lines("k-avoid"), fee: v("k-fee") || "Not agreed", guarantee: v("k-guarantee") || "Not agreed", lastContact: ago(0) };
+        prefs: lines("k-prefs").map(t => ({ t, by: me, d: ago(0) })), avoid: lines("k-avoid"), fee: v("k-fee") || "Not agreed", guarantee: v("k-guarantee") || "Not agreed", lastContact: ago(0) };
       DB.clients.push(k); save(); ui.modal = null; ui.view = "client"; ui.id = k.id; toast("Client added"); break;
     }
-    case "pref-form": { if (!visClients().includes(client(ui.id))) break; client(ui.id).prefs.push(v("pref-text")); save(); toast("Preference added"); break; }
+    case "pref-form": { if (!visClients().includes(client(ui.id))) break; client(ui.id).prefs.push({ t: v("pref-text"), by: me, d: ago(0) }); save(); toast("Preference added"); break; }
     case "cand-form": {
       const smin = +v("f-smin") || 0, smax = +v("f-smax") || smin;
       const c = { id: uid("c"), owner: me, name: v("f-name"), title: v("f-title"), city: v("f-city") || "Unknown", prov: v("f-prov"), email: v("f-email"), phone: v("f-phone"),
