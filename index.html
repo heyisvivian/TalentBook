@@ -237,6 +237,13 @@ button.card:hover { border-color: var(--accent); }
 /* ---------- modal & toast ---------- */
 .scrim { position: fixed; inset: 0; background: rgba(8,14,18,.45); z-index: 20; display: grid; place-items: center; padding: 16px; }
 .modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 760px; max-height: calc(100% - 16px); overflow: auto; box-shadow: var(--shadow); display: grid; gap: 16px; padding: 20px; }
+.chart-wrap { position: relative; overflow-x: auto; }
+.chart-wrap svg { width: 100%; min-width: 460px; height: auto; display: block; }
+.chart-wrap .grid { stroke: var(--line); stroke-width: 1; }
+.chart-wrap .ax { fill: var(--muted); font: 11px var(--f-mono); }
+.chart-wrap .bar { fill: var(--accent); }
+.chart-wrap .bar-g:hover .bar { opacity: .8; }
+.chart-tip { position: absolute; pointer-events: none; background: var(--fg); color: var(--bg); font-size: .78rem; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
 .modal.wide { max-width: 1080px; }
 .sub-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .sub-grid .resume-sheet { max-height: 70vh; font-size: .82rem; }
@@ -291,7 +298,7 @@ button.chip { border: 0; cursor: pointer; font: inherit; font-size: .78rem; }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v10";
+const STORE_KEY = "talentbook-demo-v11";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -588,14 +595,31 @@ function seed() {
     c.linkedin = c.id === "c7" ? "" : `https://www.linkedin.com/in/${norm(c.name).replace(/[^a-z]+/g, "-")}-demo`;
     c.resumeDate = c.consent.date;
   });
-  return { company, recruiters, candidates, clients, jobs };
+  const PL = (candName, jobTitle, k, by, start, o) => ({ id: "pl" + candName.replace(/\W/g, "").toLowerCase(), cand: null, candName, job: null, jobTitle, client: k, recruiter: by,
+    type: o.contract ? "Contract" : "Permanent", start: ago(start), salary: o.salary || 0, feePct: o.pct || 0, contract: o.contract || null,
+    fee: o.contract ? Math.round((o.contract.bill - o.contract.pay) * o.contract.hours * o.contract.weeks) : Math.round(o.salary * o.pct / 100),
+    guaranteeDays: o.guar ?? 90, invoice: { status: o.inv, d: o.inv === "Not invoiced" ? null : ago(Math.max(start, 0)), paid: o.inv === "Paid" ? ago(Math.max(start - 30, 0)) : null },
+    status: o.status || "Active", d: ago(start + 14), by });
+  const placements = [
+    PL("Kevin Liu", "Structural Designer", "k1", "r1", 250, { salary: 112000, pct: 20, inv: "Paid" }),
+    PL("Amira Hassan", "Electrical Designer", "k3", "r1", 215, { salary: 82000, pct: 18, inv: "Paid" }),
+    PL("Patrick Byrne", "Site Superintendent", "k2", "r1", 180, { salary: 128000, pct: 18, inv: "Paid", guar: 60 }),
+    PL("Lucas Moreau", "Project Coordinator", "k2", "r1", 150, { salary: 85000, pct: 18, inv: "Paid", guar: 60, status: "Fell off · refunded" }),
+    PL("Sophie Lavoie", "Ingénieure électrique", "k4", "m1", 140, { salary: 118000, pct: 22, inv: "Paid", guar: 120 }),
+    PL("Ben Carter", "Mechanical Designer (contract)", "k5", "r1", 110, { contract: { pay: 35, bill: 47.25, hours: 40, weeks: 26 }, inv: "Paid", guar: 0 }),
+    PL("Nina Kowalski", "Geotechnical EIT", "k6", "r1", 80, { salary: 92000, pct: 20, inv: "Paid" }),
+    PL("Omar Siddiqui", "Controls Technologist", "k7", "r1", 45, { salary: 105000, pct: 20, inv: "Invoiced" }),
+    PL("Chloe Martin", "HVAC Engineer", "k3", "r1", 20, { salary: 115000, pct: 18, inv: "Invoiced" }),
+    PL("Raj Patel", "Structural EIT", "k1", "m1", -14, { salary: 85000, pct: 20, inv: "Not invoiced" })
+  ];
+  return { company, recruiters, candidates, clients, jobs, placements };
 }
 
 /* ---------------- storage ---------------- */
 let DB, me = null;
 function load() {
   try { const raw = localStorage.getItem(STORE_KEY); if (raw) { DB = JSON.parse(raw); } } catch (e) { DB = null; }
-  if (!DB || !DB.candidates || !DB.company) DB = seed();
+  if (!DB || !DB.candidates || !DB.company || !DB.placements) DB = seed();
   try { me = sessionStorage.getItem(STORE_KEY + "-me"); } catch (e) { me = null; }
   if (!DB.recruiters.some(r => r.id === me)) me = null;
 }
@@ -608,8 +632,8 @@ const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ
 const initials = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 const ROLE_LABEL = { admin: "Admin", manager: "Manager", recruiter: "Recruiter" };
 const PERMS = {
-  admin: ["viewAll", "viewClientContacts", "addClient", "editClient", "addJob", "editJob", "assign", "manageUsers"],
-  manager: ["viewAll", "viewClientContacts", "addClient", "editClient", "addJob", "editJob", "assign"],
+  admin: ["viewAll", "viewClientContacts", "viewRevenue", "addClient", "editClient", "addJob", "editJob", "assign", "manageUsers"],
+  manager: ["viewAll", "viewClientContacts", "viewRevenue", "addClient", "editClient", "addJob", "editJob", "assign"],
   recruiter: []
 };
 const role = () => recruiter(me)?.role || "recruiter";
@@ -620,6 +644,29 @@ const visClients = () => can("viewAll") ? DB.clients : DB.clients.filter(k => vi
 const recruiterUsers = () => DB.recruiters.filter(u => u.role === "recruiter");
 const prefOf = p => typeof p === "string" ? { t: p } : p;
 const prefLi = p => { const x = prefOf(p); return `<li><span>${esc(x.t)}${x.by || x.d ? `<span class="by">${esc(x.by ? recruiter(x.by)?.name || "Former user" : "")}${x.by && x.d ? " · " : ""}${x.d ? fmtDate(x.d) : ""}</span>` : ""}</span></li>`; };
+const money = n => "$" + Math.round(n || 0).toLocaleString("en-CA");
+const visPlacements = () => can("viewAll") ? DB.placements : DB.placements.filter(x => x.recruiter === me);
+const refunded = x => /refunded/.test(x.status);
+const guarEnd = x => addDays(x.start, x.guaranteeDays || 0);
+function guarState(x) {
+  if (/^Fell off/.test(x.status)) return { cls: "bad", label: x.status };
+  const toStart = -daysSince(x.start), left = -daysSince(guarEnd(x));
+  if (toStart > 0) return { cls: "outline", label: `Starts in ${toStart} day${toStart === 1 ? "" : "s"}` };
+  if (!x.guaranteeDays || left < 0) return { cls: "good", label: x.guaranteeDays ? "Guarantee cleared" : "No guarantee" };
+  return { cls: left <= 14 ? "warn" : "", label: `In guarantee · ${left} day${left === 1 ? "" : "s"} left` };
+}
+function invState(x) {
+  if (refunded(x)) return { cls: "bad", label: "Refunded" };
+  if (x.invoice.status === "Paid") return { cls: "good", label: "Paid" };
+  if (x.invoice.status === "Invoiced") return daysSince(x.invoice.d) > 30 ? { cls: "bad", label: `Overdue · ${daysSince(x.invoice.d)} days` } : { cls: "warn", label: "Invoiced" };
+  return daysSince(x.start) >= 0 ? { cls: "bad", label: "Not invoiced" } : { cls: "outline", label: "Invoice on start" };
+}
+function clientTerms(k, j) {
+  const pct = +((k.fee.match(/(\d+(?:\.\d+)?)\s*%/) || [])[1]) || 20;
+  const markup = +((k.fee.match(/×\s*(\d+(?:\.\d+)?)/) || [])[1]) || 1.3;
+  const g = (k.guarantee.match(/(\d+)\s*day/) || [])[1];
+  return { pct, markup, guar: g ? +g : j.type === "Contract" ? 0 : 90 };
+}
 const userName = id => recruiter(id)?.name || "Former user";
 const followDue = c => c.nextFollowUp && daysSince(c.nextFollowUp.d) >= 0;
 const needsFollowUp = c => c.status !== "Placed" && c.status !== "Do not contact" && (followDue(c) || recency(c).days >= 60);
@@ -656,6 +703,7 @@ const icons = {
   linkedin: '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.5h4V21H3zM9.5 9.5h3.8v1.6h.1c.5-1 1.8-2 3.7-2 4 0 4.7 2.6 4.7 6V21h-4v-5.2c0-1.2 0-2.9-1.8-2.9s-2 1.4-2 2.8V21h-4z"/></svg>',
   flow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg>',
   key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14 9l2 2"/></svg>',
+  coin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6.5V8M12 16v1.5"/></svg>',
   upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>'
 };
 
@@ -903,6 +951,7 @@ function shell(inner) {
       ${navBtn("candidates", "Candidates", "people", visCands().length)}
       ${navBtn("jobs", "Jobs", "brief", visJobs().filter(j => j.status === "Open").length)}
       ${navBtn("clients", "Clients", "building", visClients().length)}
+      ${navBtn("placements", "Placements", "coin")}
       ${navBtn("compliance", "Compliance", "shield")}
       ${can("manageUsers") ? navBtn("team", "Team & roles", "key") : ""}
       <div class="rail-foot">
@@ -1090,6 +1139,7 @@ function viewCandidate() {
             <span class="muted" style="font-size:.8rem">${esc(client(j.client).name)} · ${daysSince(p.since)} days in stage</span>
             ${stageTrack(p.stage)}
             <span class="why">${p.history.map(h => `${h.stage} ${fmtDate(h.d).replace(/, \d{4}$/, "")}`).join(" → ")}</span>
+            ${p.placement ? (() => { const x = DB.placements.find(y => y.id === p.placement); return x ? `<div class="row" style="gap:6px"><span class="chip good">Placed · starts ${fmtDate(x.start)}</span><span class="chip ${guarState(x).cls}">${guarState(x).label}</span><button class="linkish" style="font-size:.8rem" data-go="placements">Placements</button></div>` : ""; })() : p.stage === "Offer" && (c.owner === me || can("viewAll")) ? `<div class="row"><button class="btn sm primary" data-place="${j.id}:${i}">Record placement</button><span class="muted" style="font-size:.76rem">Offer accepted?</span></div>` : ""}
             ${p.submission ? `<div class="row" style="gap:6px"><span class="chip good">Sent to client ${fmtDate(p.submission.d).replace(/, \d{4}$/, "")}</span><button class="linkish" style="font-size:.8rem" data-sub="${j.id}:${i}">View profile sent</button></div>`
               : p.stage !== "Not a fit" && (c.owner === me || can("viewAll")) ? `<div class="row"><button class="btn sm" data-sub="${j.id}:${i}">Submit to ${esc(client(j.client).name)}</button></div>` : ""}
           </div>`).join("")}</div>` : `<div class="empty">Not in any pipeline yet. Shortlist from a job page.</div>`}</section>
@@ -1173,6 +1223,7 @@ function viewPipeline() {
   const card = x => `<div class="pcard ${stuck(x) ? "stale" : ""}">
       <div class="row" style="gap:6px;flex-wrap:nowrap"><button class="linkish" style="font-weight:700;color:var(--fg);text-decoration:none" data-open="${x.c.id}">${esc(x.c.name)}</button><span class="spacer"></span>${can("viewAll") ? `<span class="avatar xs" title="${esc(recruiter(x.c.owner)?.name || "")}">${recruiter(x.c.owner)?.initials || "?"}</span>` : ""}</div>
       <button class="linkish" style="font-size:.8rem;color:var(--muted);text-decoration:none" data-job="${x.j.id}">${esc(x.j.title)} · ${esc(client(x.j.client).name)}</button>
+      ${x.p.placement ? (() => { const pl = DB.placements.find(y => y.id === x.p.placement); return pl ? `<span class="chip good" style="justify-self:start;font-size:.7rem">Starts ${fmtDate(pl.start).replace(/, \d{4}$/, "")}</span>` : ""; })() : x.p.stage === "Offer" ? `<button class="chip" style="justify-self:start;font-size:.7rem" data-place="${x.j.id}:${x.i}">Record placement</button>` : ""}
       ${x.p.submission ? `<button class="chip good" style="justify-self:start;font-size:.7rem" data-sub="${x.j.id}:${x.i}">Sent to client ${fmtDate(x.p.submission.d).replace(/, \d{4}$/, "")}</button>` : ""}
       <div class="row" style="gap:6px"><span class="num ${stuck(x) ? "" : "muted"}" style="font-size:.74rem;white-space:nowrap;${stuck(x) ? "color:var(--warn);font-weight:600" : ""}">${daysSince(x.p.since)}d in stage</span><span class="spacer"></span>
         <select class="input mini" data-pstage="${x.j.id}:${x.i}" aria-label="Move ${esc(x.c.name)}">${STAGES.map(st => `<option ${st === x.p.stage ? "selected" : ""}>${st}</option>`).join("")}</select></div>
@@ -1189,7 +1240,7 @@ function viewPipeline() {
 function viewTeam() {
   if (!can("manageUsers")) return `<div class="empty">Only admins can manage the team.</div>`;
   const rows = [["See and search every recruiter's candidates", 1, 1, 0], ["Upload résumés and keep their own candidates", 1, 1, 1], ["Edit a candidate record (owner only)", 1, 1, 1], ["Move candidates through the pipeline", 1, 1, 1],
-    ["See client contacts, fees and terms", 1, 1, 0], ["Log contacts and add notes on any candidate they can open", 1, 1, 1], ["Add and edit clients", 1, 1, 0], ["Add hiring preferences to their clients", 1, 1, 1], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Add users and change roles", 1, 0, 0]];
+    ["See client contacts, fees and terms", 1, 1, 0], ["Log contacts and add notes on any candidate they can open", 1, 1, 1], ["Add and edit clients", 1, 1, 0], ["Add hiring preferences to their clients", 1, 1, 1], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Record placements", 1, 1, 1], ["See fees, revenue and invoices", 1, 1, 0], ["Add users and change roles", 1, 0, 0]];
   return `<div class="page-head"><div><h1>Team &amp; roles</h1><p>Who can do what in ${esc(DB.company.name)}.</p></div></div>
     <section class="panel"><h2>Permissions</h2><div class="table-wrap"><table><thead><tr><th>Action</th><th>Admin</th><th>Manager</th><th>Recruiter</th></tr></thead><tbody>
       ${rows.map(([a, ...r]) => `<tr><td>${a}</td>${r.map(v => `<td>${v ? `<span class="ic good" style="display:inline-grid;width:20px;height:20px;border-radius:50%;place-items:center;font-size:.72rem">✓</span>` : `<span class="muted">—</span>`}</td>`).join("")}</tr>`).join("")}
@@ -1275,7 +1326,7 @@ function viewClient() {
       </div>
       <div class="stack">
         ${!can("viewClientContacts") ? `<section class="panel"><h2>Client contacts &amp; terms</h2><p class="muted">Contact people, fees and guarantee terms are managed by your account manager, ${esc(userName(k.owner))}. Ask them to arrange interviews or pass on client feedback.</p></section>` : `<section class="panel"><h2>Contacts</h2>${k.contacts.length ? "" : `<div class="empty">No contact added yet.</div>`}${k.contacts.map(p => `<div class="me" style="margin-bottom:8px"><span class="avatar">${initials(p.n)}</span><div><strong>${esc(p.n)}</strong><span>${esc(p.r)} · ${esc(p.e)}</span></div></div>`).join("")}</section>
-        <section class="panel"><h2>Terms</h2><dl class="kv"><dt>Fee</dt><dd>${esc(k.fee)}</dd><dt>Guarantee</dt><dd>${esc(k.guarantee)}</dd><dt>Last contact</dt><dd>${fmtDate(k.lastContact)}</dd></dl></section>`}
+        <section class="panel"><h2>Terms</h2><dl class="kv"><dt>Fee</dt><dd>${esc(k.fee)}</dd><dt>Guarantee</dt><dd>${esc(k.guarantee)}</dd><dt>Last contact</dt><dd>${fmtDate(k.lastContact)}</dd>${can("viewRevenue") ? (() => { const ps = DB.placements.filter(x => x.client === k.id && !refunded(x)); return `<dt>Placements</dt><dd>${ps.length} · ${money(ps.reduce((a, x) => a + x.fee, 0))} in fees</dd>`; })() : ""}</dl></section>`}
       </div>
     </div>`;
 }
@@ -1530,6 +1581,122 @@ function viewSubmit() {
   </div></div>`;
 }
 
+function placementFromForm(j, c) {
+  const v = id => document.getElementById(id)?.value?.trim() ?? "", n = id => +v(id) || 0;
+  const k = client(j.client), t = clientTerms(k, j), mgr = can("viewRevenue");
+  const contract = j.type === "Contract";
+  const pay = n("pl-pay"), bill = mgr ? n("pl-bill") : Math.round(pay * t.markup * 100) / 100;
+  const o = { start: v("pl-start") || ago(0), type: j.type, salary: contract ? 0 : n("pl-salary"),
+    feePct: contract ? 0 : (mgr ? n("pl-pct") : t.pct),
+    contract: contract ? { pay, bill, hours: n("pl-hours") || 40, weeks: n("pl-weeks") || 26 } : null,
+    guaranteeDays: mgr ? n("pl-guar") : t.guar, inv: mgr ? v("pl-inv") : "Not invoiced", credit: mgr ? v("pl-credit") : c.owner };
+  o.fee = contract ? Math.round((o.contract.bill - o.contract.pay) * o.contract.hours * o.contract.weeks) : Math.round(o.salary * o.feePct / 100);
+  return o;
+}
+function placementSummary(j, c, o) {
+  const end = addDays(o.start, o.guaranteeDays || 0);
+  const lines = [`Starts ${fmtDate(o.start)}${o.guaranteeDays ? ` · guarantee ends ${fmtDate(end)}` : ""}`];
+  if (can("viewRevenue")) lines.push(o.contract ? `Margin ${money(o.fee)}: (${money(o.contract.bill)} − ${money(o.contract.pay)}) × ${o.contract.hours} h × ${o.contract.weeks} weeks` : `Fee ${money(o.fee)}: ${o.feePct}% of ${money(o.salary)}`);
+  else lines.push("The fee is worked out from the client's terms and shown to managers.");
+  return lines.map(l => `<div>${esc(l)}</div>`).join("");
+}
+function viewPlace() {
+  const j = job(ui.place.jid), p = j.pipeline[ui.place.i], c = cand(p.c), k = client(j.client), t = clientTerms(k, j), mgr = can("viewRevenue");
+  const contract = j.type === "Contract";
+  const salary0 = c.salary.type === "annual" ? Math.min(j.salary.max || c.salary.max, Math.max(j.salary.min || 0, c.salary.max)) : 0;
+  const pay0 = c.salary.type === "hourly" ? c.salary.max : j.salary.type === "hourly" ? j.salary.min : 40;
+  const o0 = { start: addDays(ago(0), 14), type: j.type, salary: salary0, feePct: t.pct, contract: contract ? { pay: pay0, bill: Math.round(pay0 * t.markup * 100) / 100, hours: 40, weeks: 26 } : null, guaranteeDays: t.guar };
+  o0.fee = contract ? Math.round((o0.contract.bill - o0.contract.pay) * 40 * 26) : Math.round(salary0 * t.pct / 100);
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="pl-title">
+    <div class="panel-head"><div style="min-width:0"><h2 id="pl-title">Record placement</h2><p class="muted" style="font-size:.82rem">${esc(c.name)} · ${esc(j.title)} · ${esc(k.name)}</p></div><span class="spacer"></span><button class="btn ghost sm" data-act="close">Close</button></div>
+    <p style="font-size:.88rem">A placement is a candidate who accepted the offer and is starting with the client. It is what the client pays the fee for.</p>
+    <form id="pl-form" class="stack">
+      <div class="form-grid">
+        <div class="field"><label for="pl-start">Start date</label><input class="input" type="date" id="pl-start" required value="${o0.start}"></div>
+        ${contract ? `
+          <div class="field"><label for="pl-pay">Pay rate to candidate ($/h)</label><input class="input" type="number" step="0.25" min="0" id="pl-pay" required value="${pay0}"></div>
+          ${mgr ? `<div class="field"><label for="pl-bill">Bill rate to client ($/h)</label><input class="input" type="number" step="0.25" min="0" id="pl-bill" value="${o0.contract.bill}"></div>` : ""}
+          <div class="field"><label for="pl-hours">Hours per week</label><input class="input" type="number" min="1" id="pl-hours" value="40"></div>
+          <div class="field"><label for="pl-weeks">Contract length (weeks)</label><input class="input" type="number" min="1" id="pl-weeks" value="26"></div>`
+        : `<div class="field"><label for="pl-salary">Accepted base salary (CAD / yr)</label><input class="input" type="number" step="1000" min="0" id="pl-salary" required value="${salary0}"></div>
+          ${mgr ? `<div class="field"><label for="pl-pct">Fee (% of first-year base)</label><input class="input" type="number" step="0.5" min="0" id="pl-pct" value="${t.pct}"></div>` : ""}`}
+        ${mgr ? `<div class="field"><label for="pl-guar">Guarantee (days)</label><input class="input" type="number" min="0" id="pl-guar" value="${t.guar}"></div>
+          <div class="field"><label for="pl-inv">Invoice</label><select class="input" id="pl-inv"><option>Not invoiced</option><option>Invoiced</option><option>Paid</option></select></div>
+          <div class="field"><label for="pl-credit">Credit to</label><select class="input" id="pl-credit">${DB.recruiters.filter(u => u.role !== "admin").map(u => `<option value="${u.id}" ${u.id === c.owner ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select></div>` : ""}
+      </div>
+      <div class="notice info" id="pl-summary">${placementSummary(j, c, o0)}</div>
+      <p class="demo-note">Saving marks ${esc(c.name.split(" ")[0])} as Placed, moves this pipeline entry to Placed and marks the job as Filled.</p>
+      <div class="row"><button class="btn primary">Save placement</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>
+    </form>
+  </div></div>`;
+}
+function feeChart(list) {
+  const months = [];
+  for (let m = 11; m >= 0; m--) { const d = new Date(TODAY.getFullYear(), TODAY.getMonth() - m, 1); months.push({ key: d.toISOString().slice(0, 7), label: d.toLocaleDateString("en-CA", { month: "short" }), year: d.getFullYear(), fee: 0, n: 0 }); }
+  list.filter(x => !refunded(x) && daysSince(x.start) >= 0).forEach(x => { const m = months.find(mm => mm.key === x.start.slice(0, 7)); if (m) { m.fee += x.fee; m.n++; } });
+  const max = Math.max(...months.map(m => m.fee), 1), step = max > 40000 ? 20000 : 10000, top = Math.ceil(max / step) * step;
+  const W = 720, H = 220, L = 44, R = 8, T = 12, B = 26, cw = (W - L - R) / 12, bw = cw - 2;
+  const y = v => T + (H - T - B) * (1 - v / top);
+  const ticks = []; for (let v = 0; v <= top; v += step) ticks.push(v);
+  const bars = months.map((m, i) => {
+    const x = L + i * cw + 1, yy = y(m.fee), h = H - B - yy, r = Math.min(4, h, bw / 2);
+    const path = m.fee ? `M${x},${H - B} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + bw - r} Q${x + bw},${yy} ${x + bw},${yy + r} V${H - B} Z` : "";
+    return `<g class="bar-g" data-tip="${esc(`${m.label} ${m.year} · ${money(m.fee)} · ${m.n} placement${m.n === 1 ? "" : "s"}`)}"><rect x="${x - 1}" y="${T}" width="${cw}" height="${H - B - T}" fill="transparent"/>${path ? `<path d="${path}" class="bar"/>` : ""}<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle" class="ax">${m.label}</text></g>`;
+  }).join("");
+  return `<div class="chart-wrap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Fees by start month, last 12 months">
+    ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" class="ax">${v ? "$" + v / 1000 + "k" : "$0"}</text>`).join("")}
+    ${bars}</svg><div class="chart-tip" id="chart-tip" hidden></div></div>`;
+}
+function viewPlacements() {
+  const list = visPlacements().slice().sort((a, b) => b.start.localeCompare(a.start)), rev = can("viewRevenue");
+  const last12 = list.filter(x => daysSince(x.start) <= 365);
+  const live = last12.filter(x => !refunded(x));
+  const booked = live.reduce((a, x) => a + x.fee, 0);
+  const collected = live.filter(x => x.invoice.status === "Paid").reduce((a, x) => a + x.fee, 0);
+  const owed = live.filter(x => x.invoice.status !== "Paid" && daysSince(x.start) >= 0);
+  const overdue = owed.filter(x => invState(x).label.startsWith("Overdue") || x.invoice.status === "Not invoiced");
+  const inGuar = list.filter(x => guarState(x).label.startsWith("In guarantee"));
+  const soon = list.filter(x => guarState(x).cls === "warn");
+  const starting = list.filter(x => daysSince(x.start) < 0 && !/^Fell off/.test(x.status));
+  const name = x => { const c = x.cand && cand(x.cand); return c && visCands().includes(c) ? `<button class="linkish" style="font-weight:700;color:var(--fg);text-decoration:none" data-open="${c.id}">${esc(c.name)}</button>` : `<strong>${esc(x.candName)}</strong>`; };
+  const attention = [
+    ...soon.map(x => [`warn`, `Check in with ${x.candName} before the guarantee ends ${fmtDate(guarEnd(x))}`, `${client(x.client).name} · ${x.jobTitle}`]),
+    ...starting.map(x => [``, `${x.candName} starts at ${client(x.client).name} on ${fmtDate(x.start)}`, "Call the day before and on day one"]),
+    ...(rev ? overdue.map(x => [`bad`, x.invoice.status === "Not invoiced" ? `Invoice ${client(x.client).name} for ${x.candName}` : `Chase payment from ${client(x.client).name} (${money(x.fee)})`, `${invState(x).label}`]) : [])
+  ];
+  const byRec = rev ? DB.recruiters.map(u => { const mine = live.filter(x => x.recruiter === u.id); return { u, n: mine.length, fee: mine.reduce((a, x) => a + x.fee, 0) }; }).filter(r => r.n) : [];
+  return `<div class="page-head"><div><h1>${rev ? "Placements & revenue" : "My placements"}</h1><p>A placement is a candidate who accepted an offer and started with a client${rev ? "; it is what the company invoices for" : ""}. Record one by moving a pipeline entry to Placed.</p></div></div>
+    <div class="stats">
+      ${rev ? `<div class="stat"><b>${money(booked)}</b><span>Fees booked, last 12 months</span></div>
+      <div class="stat"><b style="color:var(--good)">${money(collected)}</b><span>Collected</span></div>
+      <div class="stat"><b style="color:${overdue.length ? "var(--bad)" : "var(--fg)"}">${money(owed.reduce((a, x) => a + x.fee, 0))}</b><span>Outstanding · ${overdue.length} need action</span></div>
+      <div class="stat"><b>${live.length}</b><span>Placements, last 12 months</span></div>`
+      : `<div class="stat"><b>${live.length}</b><span>Placements, last 12 months</span></div>
+      <div class="stat"><b>${starting.length}</b><span>Starting soon</span></div>
+      <div class="stat"><b>${inGuar.length}</b><span>In guarantee now</span></div>
+      <div class="stat"><b style="color:${soon.length ? "var(--warn)" : "var(--fg)"}">${soon.length}</b><span>Guarantee ends within 14 days</span></div>`}
+    </div>
+    ${attention.length ? `<section class="panel"><h2>Needs attention</h2>${attention.map(([cls, t, sub]) => `<div class="check"><span class="ic ${cls || "good"}">${cls === "bad" ? "$" : cls === "warn" ? "!" : "→"}</span><span><strong>${esc(t)}</strong><br><span class="muted" style="font-size:.8rem">${esc(sub)}</span></span></div>`).join("")}</section>` : ""}
+    ${rev ? `<div class="two">
+      <section class="panel"><div class="panel-head"><h2>Fees by start month</h2><span class="muted" style="font-size:.8rem">Last 12 months, refunds excluded</span></div>${feeChart(list)}</section>
+      <section class="panel"><h2>By person</h2><div class="table-wrap"><table><thead><tr><th>Person</th><th>Placements</th><th>Fees</th></tr></thead><tbody>${byRec.map(r => `<tr><td>${esc(r.u.name)}</td><td class="num">${r.n}</td><td class="num">${money(r.fee)}</td></tr>`).join("")}</tbody></table></div></section>
+    </div>` : ""}
+    <section class="panel"><h2>All placements</h2><div class="table-wrap"><table>
+      <thead><tr><th>Candidate</th><th>Client · job</th>${rev ? "<th>Credit</th>" : ""}<th>Start</th><th>Pay</th>${rev ? "<th>Fee</th><th>Invoice</th>" : ""}<th>Guarantee</th></tr></thead>
+      <tbody>${list.map(x => { const g = guarState(x), inv = invState(x); return `<tr>
+        <td>${name(x)}</td>
+        <td style="min-width:190px">${esc(client(x.client).name)}<br><span class="muted">${esc(x.jobTitle)} · ${x.type}</span></td>
+        ${rev ? `<td>${esc(firstName(x.recruiter))}</td>` : ""}
+        <td style="white-space:nowrap">${fmtDate(x.start)}</td>
+        <td class="num" style="white-space:nowrap">${x.contract ? `${money(x.contract.pay)}/h · ${x.contract.weeks} wks` : money(x.salary)}</td>
+        ${rev ? `<td class="num" style="white-space:nowrap">${refunded(x) ? `<s>${money(x.fee)}</s>` : money(x.fee)}<br><span class="muted" style="font-size:.75rem">${x.contract ? `bill ${money(x.contract.bill)}/h` : `${x.feePct}% of base`}</span></td>
+          <td><select class="input mini" data-inv="${x.id}" aria-label="Invoice status">${["Not invoiced", "Invoiced", "Paid"].map(st => `<option ${st === x.invoice.status ? "selected" : ""}>${st}</option>`).join("")}</select><br><span class="chip ${inv.cls}" style="margin-top:4px">${inv.label}</span></td>` : ""}
+        <td style="min-width:170px"><span class="chip ${g.cls}">${g.label}</span>${x.guaranteeDays ? `<br><span class="muted" style="font-size:.75rem">${x.guaranteeDays} days, to ${fmtDate(guarEnd(x))}</span>` : ""}
+          ${rev ? `<br><select class="input mini" style="margin-top:4px" data-plstatus="${x.id}" aria-label="Placement status">${["Active", "Fell off · replacing", "Fell off · refunded"].map(st => `<option ${st === x.status ? "selected" : ""}>${st}</option>`).join("")}</select>` : ""}</td>
+      </tr>`; }).join("") || `<tr><td colspan="9"><div class="empty">No placements yet.</div></td></tr>`}</tbody>
+    </table></div>${rev ? `<p class="demo-note" style="margin-top:8px">Permanent fee = fee % × accepted base salary. Contract margin = (bill rate − pay rate) × hours × weeks. A candidate who leaves during the guarantee is marked Fell off: replacing (fee kept, you owe a replacement) or refunded (fee removed from revenue).</p>` : ""}</section>`;
+}
+
 function viewResume() {
   const c = cand(ui.id); if (!c) return "";
   return `<div class="scrim" data-act="close-scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="cv-title">
@@ -1545,8 +1712,8 @@ function render() {
   const app = document.getElementById("app");
   const focusId = document.activeElement?.id, selStart = document.activeElement?.selectionStart;
   if (!me) { app.innerHTML = viewLogin(); return; }
-  const views = { home: viewHome, pipeline: viewPipeline, team: viewTeam, candidates: viewCandidates, candidate: viewCandidate, jobs: viewJobs, job: viewJob, clients: viewClients, client: viewClient, compliance: viewCompliance };
-  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : ui.modal === "resume" ? viewResume() : ui.modal === "client" ? viewAddClient() : ui.modal === "job" ? viewAddJob() : ui.modal === "submit" ? viewSubmit() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
+  const views = { placements: viewPlacements, home: viewHome, pipeline: viewPipeline, team: viewTeam, candidates: viewCandidates, candidate: viewCandidate, jobs: viewJobs, job: viewJob, clients: viewClients, client: viewClient, compliance: viewCompliance };
+  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : ui.modal === "resume" ? viewResume() : ui.modal === "client" ? viewAddClient() : ui.modal === "job" ? viewAddJob() : ui.modal === "submit" ? viewSubmit() : ui.modal === "place" ? viewPlace() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
   if (focusId) { const el = document.getElementById(focusId); if (el && el.focus) { el.focus(); try { if (selStart != null) el.setSelectionRange(selStart, selStart); } catch (e) {} } }
   const drop = document.getElementById("drop");
   if (drop) {
@@ -1567,9 +1734,10 @@ async function handleFile(file) {
 function doSearch(q) { ui.query = q; ui.filters = q.trim() ? parseQuery(q) : null; ui.view = "home"; ui.modal = null; render(); }
 
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-sub],[data-pick],[data-go],[data-open],[data-job],[data-client],[data-act],[data-q],[data-drop],[data-cf],[data-shortlist],[data-pipejob]");
+  const t = e.target.closest("[data-place],[data-sub],[data-pick],[data-go],[data-open],[data-job],[data-client],[data-act],[data-q],[data-drop],[data-cf],[data-shortlist],[data-pipejob]");
   if (!t) return;
   const d = t.dataset;
+  if (d.place) { const [jid, i] = d.place.split(":"); ui.place = { jid, i: +i }; ui.modal = "place"; render(); return; }
   if (d.sub) { const [jid, i] = d.sub.split(":"); ui.sub = { jid, i: +i }; ui.modal = "submit"; render(); return; }
   if (d.pick) { ui.loginPick = d.pick; ui.loginErr = null; render(); return; }
   if (d.drop) { dropFilter(ui.filters, d.drop); render(); return; }
@@ -1615,9 +1783,13 @@ document.addEventListener("change", e => {
   if (e.target.id === "status-sel") { cand(ui.id).status = e.target.value; save(); toast("Status updated"); }
   if (e.target.dataset.pstage) {
     const [jid, i] = e.target.dataset.pstage.split(":"), p = job(jid).pipeline[+i];
+    if (e.target.value === "Placed" && !p.placement) { e.target.value = p.stage; ui.place = { jid, i: +i }; ui.modal = "place"; render(); return; }
     if (p.stage !== e.target.value) { p.stage = e.target.value; p.since = ago(0); p.history.push({ stage: p.stage, d: ago(0) }); save(); toast(`Moved to ${p.stage}`); }
   }
   if (e.target.closest?.("#sub-form")) refreshPreview();
+  if (e.target.closest?.("#pl-form")) refreshPlacement();
+  if (e.target.dataset.inv && can("viewRevenue")) { const x = DB.placements.find(y => y.id === e.target.dataset.inv); x.invoice.status = e.target.value; if (x.invoice.status !== "Not invoiced" && !x.invoice.d) x.invoice.d = ago(0); if (x.invoice.status === "Paid") x.invoice.paid = ago(0); if (x.invoice.status === "Not invoiced") x.invoice = { status: "Not invoiced", d: null, paid: null }; save(); toast("Invoice updated"); }
+  if (e.target.dataset.plstatus && can("viewRevenue")) { DB.placements.find(y => y.id === e.target.dataset.plstatus).status = e.target.value; save(); toast("Placement updated"); }
   if (e.target.id === "pipe-job") { ui.pipeJob = e.target.value; render(); }
   if (e.target.id === "pipe-rec") { ui.pipeRec = e.target.value; render(); }
   if (e.target.id === "cand-owner") { ui.candOwner = e.target.value; render(); }
@@ -1630,8 +1802,17 @@ document.addEventListener("change", e => {
   if (e.target.id === "jb-client") { const k = client(e.target.value); document.getElementById("jb-city").value = k.city; document.getElementById("jb-prov").value = k.prov; }
   if (e.target.closest?.("#job-form")) { const el = document.getElementById("job-checks"); if (el) el.innerHTML = jobChecksHtml(jobFromForm()); }
 });
+const refreshPlacement = () => { const el = document.getElementById("pl-summary"); if (el && ui.place) { const j = job(ui.place.jid), c = cand(j.pipeline[ui.place.i].c); el.innerHTML = placementSummary(j, c, placementFromForm(j, c)); } };
 const refreshPreview = () => { const el = document.getElementById("sb-preview"); if (el && ui.sub) { const j = job(ui.sub.jid); el.textContent = clientProfile(cand(j.pipeline[ui.sub.i].c), j, submitForm()); } };
-document.addEventListener("input", e => { if (e.target.closest?.("#sub-form")) refreshPreview(); if (e.target.closest?.("#job-form")) { const el = document.getElementById("job-checks"); if (el) el.innerHTML = jobChecksHtml(jobFromForm()); } if (e.target.id === "cand-filter") { ui.candText = e.target.value; render(); } if (e.target.id === "login-email") ui.loginEmail = e.target.value; });
+document.addEventListener("mousemove", e => {
+  const tip = document.getElementById("chart-tip"); if (!tip) return;
+  const g = e.target.closest?.(".bar-g");
+  if (!g) { tip.hidden = true; return; }
+  const box = tip.parentElement.getBoundingClientRect();
+  tip.textContent = g.dataset.tip; tip.hidden = false;
+  tip.style.left = Math.min(e.clientX - box.left + 12, box.width - tip.offsetWidth) + "px"; tip.style.top = Math.max(e.clientY - box.top - 34, 0) + "px";
+});
+document.addEventListener("input", e => { if (e.target.closest?.("#pl-form")) refreshPlacement(); if (e.target.closest?.("#sub-form")) refreshPreview(); if (e.target.closest?.("#job-form")) { const el = document.getElementById("job-checks"); if (el) el.innerHTML = jobChecksHtml(jobFromForm()); } if (e.target.id === "cand-filter") { ui.candText = e.target.value; render(); } if (e.target.id === "login-email") ui.loginEmail = e.target.value; });
 document.addEventListener("submit", e => {
   e.preventDefault();
   const v = id => document.getElementById(id)?.value?.trim() ?? "";
@@ -1656,6 +1837,17 @@ document.addEventListener("submit", e => {
       const u = cleanLinkedIn(v("li-url"));
       if (u === null) { ui.liErr = "Use a profile link like https://www.linkedin.com/in/name"; render(); return; }
       cand(ui.id).linkedin = u; ui.modal = null; ui.liErr = null; save(); toast(u ? "LinkedIn link saved" : "LinkedIn link removed"); break;
+    }
+    case "pl-form": {
+      const j = job(ui.place.jid), p = j.pipeline[ui.place.i], c = cand(p.c), o = placementFromForm(j, c);
+      const pl = { id: uid("pl"), cand: c.id, candName: c.name, job: j.id, jobTitle: j.title, client: j.client, recruiter: o.credit || c.owner, type: j.type, start: o.start,
+        salary: o.salary, feePct: o.feePct, contract: o.contract, fee: o.fee, guaranteeDays: o.guaranteeDays,
+        invoice: { status: o.inv, d: o.inv === "Not invoiced" ? null : ago(0), paid: o.inv === "Paid" ? ago(0) : null }, status: "Active", d: ago(0), by: me };
+      DB.placements.push(pl); p.placement = pl.id;
+      if (p.stage !== "Placed") { p.stage = "Placed"; p.since = ago(0); p.history.push({ stage: "Placed", d: ago(0) }); }
+      c.status = "Placed"; j.status = "Filled";
+      c.comms.push({ d: ago(0), type: "Call", dir: "Outbound", by: me, s: `Offer accepted: placed at ${client(j.client).name} as ${j.title}, starting ${fmtDate(o.start)}.` });
+      ui.modal = null; ui.place = null; save(); toast(`${c.name} placed at ${client(j.client).name}`); break;
     }
     case "sub-form": {
       const j = job(ui.sub.jid), p = j.pipeline[ui.sub.i], o = submitForm();

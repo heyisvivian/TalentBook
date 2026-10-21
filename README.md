@@ -27,6 +27,8 @@ Every account uses the password `demo`.
 | Add and edit clients | ✓ | ✓ | |
 | Add hiring preferences to their clients (each shows who added it and when) | ✓ | ✓ | ✓ |
 | Create jobs, change job status, assign recruiters | ✓ | ✓ | |
+| Record placements | ✓ | ✓ | ✓ |
+| See fees, revenue and invoices | ✓ | ✓ | |
 | Add users and change roles | ✓ | | |
 
 Recruiters see only their own candidates and the jobs assigned to them. Every contact log entry and memory card records who added it, and anyone who can open the candidate sees the candidate's contact details and all notes. Recruiters see a client's name, preferences and jobs, but not its contact people, fees or guarantee terms. Logging a contact can set the next follow-up date; due follow-ups top the home page queue. A client appears for a recruiter once they have a job with that client.
@@ -42,6 +44,15 @@ A pipeline entry is one candidate in one job, with a stage (Sourced, Contacted, 
 ## Submitting a candidate to a client
 
 Pressing Submit on a pipeline entry (job page, candidate profile) opens a preview of the client copy, which is exactly what the client receives. Phone, email, LinkedIn, street address and postal code are always removed, from the résumé and from the recruiter's summary. The recruiter can show initials instead of the full name, choose whether to include expected pay, and copy the text into an email. "Mark as submitted" saves the submission on the pipeline entry, moves it to Submitted and logs it in the candidate's contact history. The sent profile can be reopened from the job page, the pipeline board and the candidate profile.
+
+## Placements and revenue
+
+A placement is a candidate who accepted an offer and started with a client. It is what the company invoices the client for.
+
+- **Recording one:** moving a pipeline entry to Placed (or pressing Record placement on an Offer) opens the placement form: start date, accepted base salary, or pay rate, hours and weeks for a contract. Fee %, bill rate, guarantee and who gets credit come from the client's terms and only managers and admins see or change them. Saving marks the candidate Placed, the entry Placed and the job Filled, and logs it in the contact history.
+- **Fees:** permanent fee = fee % × accepted base salary. Contract margin = (bill rate − pay rate) × hours per week × weeks.
+- **Guarantee:** if the candidate leaves within the guarantee period, the placement is marked Fell off: replacing (fee kept, a replacement is owed) or refunded (fee removed from revenue).
+- **Placements page:** managers and admins see fees booked, collected and outstanding for the last 12 months, a chart of fees by start month, a breakdown by person, invoice status (Not invoiced, Invoiced, Paid; invoices over 30 days are Overdue) and a Needs attention list (guarantees ending within 14 days, starts coming up, invoices to send or chase). Recruiters see their own placements, start dates and guarantee check-ins, without fees.
 
 ## What the demo does
 
