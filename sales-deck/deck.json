@@ -1,0 +1,17 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-10-21T14:30:00Z" },
+  "lists": "css",
+  "title": "TalentBook Sales Deck",
+  "order": ["cover", "statement", "pains", "search", "profile", "rules", "engineering", "fees", "compare", "pilot"],
+  "sections": {
+    "intro": { "description": "The problem: good candidates get lost in the agency's own database", "start": "cover" },
+    "product": { "description": "What TalentBook does: search, profiles, Canadian compliance, engineering detail and fee protection", "start": "search" },
+    "close": { "description": "How it compares with a typical CRM and how to start a pilot", "start": "compare" }
+  },
+  "faces": {
+    "bricolage-grotesque": { "family": "Bricolage Grotesque", "href": "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&display=swap" },
+    "figtree": { "family": "Figtree", "href": "https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" }
+  },
+  "designSystems": []
+}
