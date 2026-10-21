@@ -1,0 +1,1302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TalentBook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: operator console. Fixed left rail for navigation, one working column, side panel for facts on records. */
+:root {
+  --bg: #F3F6F7;
+  --surface: #FFFFFF;
+  --surface-2: #EBF0F1;
+  --fg: #14212A;
+  --muted: #5A6973;
+  --line: #D9E1E4;
+  --accent: #0D6B5E;
+  --accent-fg: #FFFFFF;
+  --accent-soft: #DDEFEA;
+  --good: #1D7A4C; --good-soft: #DFF2E7;
+  --warn: #9A5B00; --warn-soft: #FBEFD9;
+  --bad: #B0281F;  --bad-soft: #FBE3E0;
+  --shadow: 0 1px 2px rgba(20,33,42,.06), 0 4px 14px rgba(20,33,42,.06);
+  --f-display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1417; --surface: #151E22; --surface-2: #1C272C; --fg: #E4EBEE; --muted: #93A3AB; --line: #2A373D;
+  --accent: #4CC2AB; --accent-fg: #06201B; --accent-soft: #15332E;
+  --good: #52C68E; --good-soft: #173326; --warn: #E7A947; --warn-soft: #3A2C14; --bad: #F27A6F; --bad-soft: #3D1D1A;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E1417; --surface: #151E22; --surface-2: #1C272C; --fg: #E4EBEE; --muted: #93A3AB; --line: #2A373D;
+  --accent: #4CC2AB; --accent-fg: #06201B; --accent-soft: #15332E;
+  --good: #52C68E; --good-soft: #173326; --warn: #E7A947; --warn-soft: #3A2C14; --bad: #F27A6F; --bad-soft: #3D1D1A;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--f-body); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+h1 { font-size: 1.75rem; line-height: 1.15; }
+h2 { font-size: 1.15rem; }
+h3 { font-size: .95rem; font-family: var(--f-body); font-weight: 700; letter-spacing: 0; }
+p { margin: 0; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: .92em; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.stack { display: grid; gap: 12px; }
+.spacer { flex: 1; }
+
+/* ---------- buttons, inputs, chips ---------- */
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 7px 12px; border-radius: 8px; font-weight: 600; font-size: .88rem; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--fg); background: var(--surface-2); }
+.btn.sm { padding: 4px 9px; font-size: .8rem; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: .78rem; font-weight: 600; color: var(--muted); }
+.input, select.input, textarea.input { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; }
+textarea.input { resize: vertical; min-height: 72px; }
+.input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); font-size: .78rem; font-weight: 500; white-space: nowrap; }
+.chip.hit { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad  { background: var(--bad-soft); color: var(--bad); }
+.chip.outline { background: transparent; border: 1px solid var(--line); }
+.chip button { border: 0; background: none; padding: 0 0 0 2px; color: inherit; opacity: .7; font-size: .9rem; line-height: 1; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--muted); flex: none; }
+.dot.good { background: var(--good); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+
+/* ---------- panels ---------- */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.panel > h2, .panel > .panel-head { margin-bottom: 12px; }
+.panel-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.panel-head h2 { margin: 0; }
+.empty { padding: 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); }
+.kv { display: grid; grid-template-columns: minmax(110px, 40%) 1fr; gap: 8px 12px; font-size: .88rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+/* ---------- login ---------- */
+.login { min-height: 100%; display: grid; place-items: center; padding-block: 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.login-card { width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 28px; box-shadow: var(--shadow); display: grid; gap: 18px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 700; font-size: 1.2rem; }
+.brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font-size: .95rem; }
+.who { display: grid; gap: 8px; }
+.who button { display: flex; gap: 12px; align-items: center; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; }
+.who button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .8rem; background: var(--surface-2); color: var(--fg); flex: none; }
+.avatar.lg { width: 56px; height: 56px; font-size: 1.1rem; background: var(--accent-soft); color: var(--accent); }
+.err { color: var(--bad); font-size: .85rem; }
+
+/* ---------- shell ---------- */
+.shell { display: grid; grid-template-columns: 228px 1fr; min-height: 100%; }
+.rail { background: var(--surface); border-right: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
+.rail .brand { padding: 4px 8px 14px; }
+.nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 8px 10px; border-radius: 8px; font-weight: 600; color: var(--muted); text-align: left; }
+.nav-btn:hover { background: var(--surface-2); color: var(--fg); }
+.nav-btn[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.nav-btn svg { width: 18px; height: 18px; flex: none; }
+.nav-btn .count { margin-left: auto; font-family: var(--f-mono); font-size: .75rem; color: var(--muted); }
+.rail-foot { margin-top: auto; display: grid; gap: 8px; padding: 10px 8px 0; border-top: 1px solid var(--line); }
+.me { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.me > div { min-width: 0; }
+.me strong { display: block; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me span { font-size: .75rem; color: var(--muted); }
+.main { min-width: 0; display: flex; flex-direction: column; }
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; gap: 10px; align-items: center; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.topbar form { flex: 1; min-width: 0; position: relative; }
+.topbar .input { padding-left: 34px; height: 38px; }
+.topbar form svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); }
+.content { padding-block: 22px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; max-width: 1240px; width: 100%; }
+.page-head { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.page-head > div { min-width: 0; }
+.page-head p { color: var(--muted); margin-top: 4px; }
+
+/* ---------- search hero ---------- */
+.ask { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; box-shadow: var(--shadow); }
+.ask form { display: flex; gap: 8px; }
+.ask .input { font-size: 1rem; height: 46px; }
+.ask .btn { height: 46px; padding: 0 18px; }
+.understood { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .82rem; }
+.demo-note { font-size: .76rem; color: var(--muted); }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: grid; gap: 2px; text-align: left; }
+button.stat:hover { border-color: var(--muted); }
+.stat b { font-family: var(--f-display); font-size: 1.6rem; line-height: 1.1; }
+.stat span { font-size: .8rem; color: var(--muted); }
+
+/* ---------- lists ---------- */
+.list { display: grid; gap: 8px; }
+.cand { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; text-align: left; width: 100%; }
+.cand:hover { border-color: var(--accent); }
+.cand-main { min-width: 0; display: grid; gap: 4px; }
+.cand-name { font-weight: 700; font-size: .98rem; }
+.cand-meta { font-size: .82rem; color: var(--muted); display: flex; gap: 4px 12px; flex-wrap: wrap; }
+.cand-side { display: grid; gap: 4px; justify-items: end; text-align: right; font-size: .8rem; }
+.why { font-size: .8rem; color: var(--muted); }
+.score { font-family: var(--f-display); font-weight: 700; font-size: 1.25rem; line-height: 1; }
+.bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; width: 90px; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; background: var(--surface-2); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr.click { cursor: pointer; }
+tbody tr.click:hover td { background: var(--surface-2); }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 8px; text-align: left; align-content: start; }
+button.card:hover { border-color: var(--accent); }
+
+/* ---------- profile ---------- */
+.profile-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.profile-head h1 { font-size: 1.55rem; }
+.two { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.summary { background: var(--accent-soft); border: 1px solid transparent; border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; }
+.summary p { max-width: 75ch; }
+.memory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.memo { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; background: var(--surface); font-size: .88rem; }
+.memo-top { display: flex; justify-content: space-between; gap: 8px; font-size: .74rem; color: var(--muted); }
+.timeline { display: grid; gap: 0; }
+.tl { display: grid; grid-template-columns: 92px 18px minmax(0, 1fr); gap: 8px; font-size: .88rem; }
+.tl-date { color: var(--muted); font-size: .78rem; padding-top: 2px; text-align: right; }
+.tl-line { position: relative; display: flex; justify-content: center; }
+.tl-line::before { content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: var(--line); }
+.tl-line i { position: relative; margin-top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
+.tl-body { padding-bottom: 14px; min-width: 0; }
+.tl-body b { font-size: .8rem; }
+.pain { display: grid; gap: 6px; padding: 0; margin: 0; list-style: none; }
+.pain li { display: flex; gap: 8px; font-size: .88rem; }
+.pain li::before { content: ""; width: 6px; height: 6px; margin-top: 8px; border-radius: 2px; background: var(--warn); flex: none; }
+.pain.moti li::before { background: var(--good); }
+.skill-list { display: grid; gap: 6px; }
+.skill { display: grid; grid-template-columns: minmax(0,1fr) 70px auto; gap: 8px; align-items: center; font-size: .86rem; }
+.skill .bar { width: 100%; }
+.breakdown { display: grid; grid-template-columns: 90px minmax(0,1fr) 34px; gap: 4px 8px; font-size: .78rem; align-items: center; }
+.breakdown .bar { width: 100%; }
+.check { display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 8px; font-size: .86rem; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.check:last-child { border-bottom: 0; }
+.check .ic { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: .72rem; font-weight: 700; }
+.ic.good { background: var(--good-soft); color: var(--good); } .ic.warn { background: var(--warn-soft); color: var(--warn); } .ic.bad { background: var(--bad-soft); color: var(--bad); }
+
+/* ---------- modal & toast ---------- */
+.scrim { position: fixed; inset: 0; background: rgba(8,14,18,.45); z-index: 20; display: grid; place-items: center; padding: 16px; }
+.modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 760px; max-height: calc(100% - 16px); overflow: auto; box-shadow: var(--shadow); display: grid; gap: 16px; padding: 20px; }
+.drop { border: 2px dashed var(--line); border-radius: 12px; padding: 26px; text-align: center; display: grid; gap: 8px; justify-items: center; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.form-grid .full { grid-column: 1 / -1; }
+.notice { border-radius: 10px; padding: 10px 12px; font-size: .85rem; }
+.notice.warn { background: var(--warn-soft); color: var(--warn); }
+.notice.bad { background: var(--bad-soft); color: var(--bad); }
+.notice.info { background: var(--surface-2); color: var(--fg); }
+.toast { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 16px; border-radius: 999px; font-weight: 600; font-size: .86rem; z-index: 30; box-shadow: var(--shadow); }
+
+@media (max-width: 980px) {
+  .two { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 820px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; flex-direction: row; overflow-x: auto; padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--line); gap: 2px; }
+  .rail .brand, .rail-foot .me, .nav-btn .count { display: none; }
+  .nav-btn { width: auto; white-space: nowrap; }
+  .rail-foot { margin: 0 0 0 auto; border: 0; padding: 0; display: flex; }
+  .topbar { top: 0; position: static; }
+}
+@media (max-width: 560px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .cand { grid-template-columns: minmax(0, 1fr); }
+  .cand > .avatar { display: none; }
+  .cand-side { justify-items: start; text-align: left; grid-auto-flow: column; justify-content: start; gap: 10px; }
+  .profile-head { grid-template-columns: auto minmax(0,1fr); }
+  .profile-head > .row { grid-column: 1 / -1; }
+  .ask form { flex-direction: column; }
+  .tl { grid-template-columns: 70px 18px minmax(0, 1fr); }
+  .topbar .btn span { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cand, .card, .btn, .nav-btn { transition: border-color .12s, background-color .12s; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+/* =========================================================================
+   TalentBook demo. Everything runs in the browser: seed data, the natural-
+   language search parser and the matching score are local functions that
+   stand in for a backend and an LLM. Data is kept in localStorage.
+   ========================================================================= */
+
+const STORE_KEY = "talentbook-demo-v1";
+const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
+const DAY = 86400000;
+const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
+const daysSince = iso => Math.round((TODAY - new Date(iso + "T12:00:00")) / DAY);
+const addDays = (iso, n) => new Date(new Date(iso + "T12:00:00").getTime() + n * DAY).toISOString().slice(0, 10);
+const uid = p => p + Math.random().toString(36).slice(2, 9);
+
+/* ---------------- seed data ---------------- */
+function seed() {
+  const recruiters = [
+    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Engineering & Construction · Toronto", email: "maya.chen@northbound.example", licence: "ON recruiter licence RL-2024-0418" },
+    { id: "r2", name: "Julien Tremblay", initials: "JT", desk: "Industrial & Automation · Montréal", email: "julien.tremblay@northbound.example", licence: "QC agency permit (CNESST) AP-1127" },
+    { id: "r3", name: "Priya Natarajan", initials: "PN", desk: "Technology · Vancouver & Calgary", email: "priya.natarajan@northbound.example", licence: "ON recruiter licence RL-2024-0533" }
+  ];
+  const consent = (d, method, casl, months = 24) => ({ date: ago(d), method, casl, retainUntil: addDays(ago(d), Math.round(months * 30.4)) });
+  const S = (n, y) => ({ n, y });
+  const candidates = [
+    { id: "c1", owner: "r1", name: "Daniel Okafor", title: "Structural Engineer", city: "Mississauga", prov: "ON", email: "d.okafor@mail.example", phone: "(905) 555-0142",
+      years: 9, designations: ["P.Eng"], langs: ["English"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 115000, max: 125000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
+      skills: [S("ETABS", 8), S("SAFE", 6), S("Revit", 5), S("Concrete design (CSA A23.3)", 9), S("Steel design (CSA S16)", 7), S("AutoCAD", 9)],
+      pains: ["No path to Associate at current firm after 4 years", "90-minute commute to a downtown office 4 days a week"],
+      motives: ["Wants high-rise residential work", "Enjoys mentoring EITs", "Prefers a 3-day office week"],
+      memory: [
+        { d: ago(18), tag: "Compensation", t: "Current base $112k + 5% bonus. Will not move for less than $115k base." },
+        { d: ago(18), tag: "Preference", t: "Avoid firms that are mostly parking-garage work. Liked Lakeshore's condo portfolio." },
+        { d: ago(40), tag: "Personal", t: "Second child due in March. Wants any start date before end of January." }
+      ],
+      comms: [
+        { d: ago(18), type: "Call", s: "30-min check-in. Open to Lakeshore Structural intermediate role; sent job brief." },
+        { d: ago(40), type: "Email", s: "Sent updated résumé and two project sheets (Port Credit tower, Square One podium)." },
+        { d: ago(120), type: "Meeting", s: "Coffee intro at PEO chapter event. Passive, wants to be kept in mind." }
+      ],
+      consent: consent(120, "Verbal on call, confirmed by email", "Express"), resume: "Daniel_Okafor_CV.pdf" },
+    { id: "c2", owner: "r1", name: "Sofia Marchetti", title: "Senior Construction Project Manager", city: "Toronto", prov: "ON", email: "sofia.m@mail.example", phone: "(416) 555-0187",
+      years: 12, designations: ["PMP"], langs: ["English", "Italian"], auth: "Permanent resident", status: "Passive",
+      salary: { min: 135000, max: 150000, type: "annual" }, modes: ["On-site", "Hybrid"], relocate: false, notice: "6 weeks",
+      skills: [S("Procore", 7), S("Primavera P6", 10), S("MS Project", 10), S("Contract administration (CCDC)", 11), S("Cost control", 12), S("Stakeholder management", 12)],
+      pains: ["60-hour weeks on the general contractor side", "Feels decisions are made without her at the owner level"],
+      motives: ["Interested in owner-side or developer PM roles", "Wants a car allowance or transit pass"],
+      memory: [
+        { d: ago(95), tag: "Preference", t: "Will consider GC roles only with a strong site superintendent already in place." },
+        { d: ago(95), tag: "Client feedback", t: "Northshore Builders liked her Vaughan mid-rise experience in 2025 intake call." }
+      ],
+      comms: [
+        { d: ago(95), type: "Call", s: "Discussed market; not actively looking until her current project tops out." },
+        { d: ago(210), type: "LinkedIn", s: "Accepted connection, short intro message." }
+      ],
+      consent: consent(210, "Online form", "Express"), resume: "Sofia_Marchetti_PMP.pdf" },
+    { id: "c3", owner: "r1", name: "Arjun Mehta", title: "Electrical Designer (EIT)", city: "Brampton", prov: "ON", email: "arjun.mehta@mail.example", phone: "(647) 555-0110",
+      years: 4, designations: ["EIT"], langs: ["English", "Hindi", "Punjabi"], auth: "Open work permit (to Aug 2027)", status: "Active",
+      salary: { min: 85000, max: 95000, type: "annual" }, modes: ["Hybrid"], relocate: true, notice: "2 weeks",
+      skills: [S("Revit MEP", 3), S("AutoCAD Electrical", 4), S("ETAP", 2), S("Power distribution design", 4), S("Canadian Electrical Code (CEC)", 4)],
+      pains: ["Paid below market at a small design-build firm", "Needs an employer that will support his P.Eng experience record"],
+      motives: ["PEO experience requirement: 1 more year under a P.Eng", "Interested in data centre and healthcare projects"],
+      memory: [
+        { d: ago(6), tag: "Compensation", t: "At $78k. Target $90k. Would take $85k with a clear licensing mentor." },
+        { d: ago(6), tag: "Work authorization", t: "Open work permit valid to Aug 2027. Does not need LMIA. Applying for PR through Express Entry." }
+      ],
+      comms: [
+        { d: ago(6), type: "Call", s: "Screened for Greenfield MEP Electrical Designer role. Strong Revit MEP." },
+        { d: ago(9), type: "Email", s: "Inbound application through job board." }
+      ],
+      consent: consent(9, "Online form", "Express"), resume: "Arjun_Mehta_Resume.docx" },
+    { id: "c4", owner: "r1", name: "Hannah Becker", title: "Mechanical Engineer", city: "Waterloo", prov: "ON", email: "hbecker@mail.example", phone: "(519) 555-0175",
+      years: 7, designations: ["P.Eng"], langs: ["English", "German"], auth: "Canadian citizen", status: "Passive",
+      salary: { min: 105000, max: 115000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
+      skills: [S("SolidWorks", 7), S("GD&T", 6), S("FEA (ANSYS)", 4), S("Manufacturing processes", 7), S("Lean / Six Sigma", 3)],
+      pains: ["Plant is being consolidated into a US site"],
+      motives: ["Product design over sustaining engineering", "Stay in Waterloo Region"],
+      memory: [{ d: ago(150), tag: "Preference", t: "Will not relocate; partner works at the University of Waterloo." }],
+      comms: [{ d: ago(150), type: "Call", s: "Passive. Asked to be called if a product design role opens in KW." }],
+      consent: consent(400, "Email reply", "Implied"), resume: "Hannah_Becker.pdf" },
+    { id: "c5", owner: "r1", name: "Marcus Lee", title: "Municipal Civil Engineer", city: "Ottawa", prov: "ON", email: "marcus.lee@mail.example", phone: "(613) 555-0163",
+      years: 10, designations: ["P.Eng"], langs: ["English", "French"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 120000, max: 130000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "3 weeks",
+      skills: [S("Civil 3D", 9), S("Stormwater management", 10), S("AutoCAD", 10), S("Contract administration (CCDC)", 6), S("MTO standards", 8)],
+      pains: ["Current employer cut the hybrid policy to full on-site"],
+      motives: ["Bilingual work for federal or City of Ottawa clients", "Wants project manager title within 2 years"],
+      memory: [{ d: ago(30), tag: "Preference", t: "Bilingual (CBC level C). Prefers Gatineau-Ottawa clients." }],
+      comms: [
+        { d: ago(30), type: "Call", s: "Interested in municipal infrastructure roles. Sent résumé." },
+        { d: ago(65), type: "Email", s: "Follow-up after OSPE webinar." }
+      ],
+      consent: consent(65, "Email reply", "Express"), resume: "Marcus_Lee_PEng.pdf" },
+    { id: "c6", owner: "r1", name: "Fatima Al-Sayed", title: "Building Envelope Consultant (EIT)", city: "Toronto", prov: "ON", email: "fatima.alsayed@mail.example", phone: "(416) 555-0129",
+      years: 3, designations: ["EIT"], langs: ["English", "Arabic"], auth: "Permanent resident", status: "Active",
+      salary: { min: 75000, max: 85000, type: "annual" }, modes: ["On-site", "Hybrid"], relocate: false, notice: "2 weeks",
+      skills: [S("Building science", 3), S("WUFI", 2), S("Revit", 2), S("Field review", 3), S("Ontario Building Code", 3)],
+      pains: ["Mostly field reviews, little design work"],
+      motives: ["Wants energy-retrofit and Passive House projects"],
+      memory: [{ d: ago(12), tag: "Preference", t: "Has a G licence and a car; happy to do site visits across the GTA." }],
+      comms: [{ d: ago(12), type: "Call", s: "Intro screen. Shortlisting for envelope roles." }],
+      consent: consent(12, "Verbal on call, confirmed by email", "Express"), resume: "Fatima_AlSayed_CV.pdf" },
+    { id: "c7", owner: "r1", name: "Ryan O'Connor", title: "Construction Superintendent", city: "Hamilton", prov: "ON", email: "ryan.oc@mail.example", phone: "(905) 555-0191",
+      years: 15, designations: ["Gold Seal"], langs: ["English"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 120000, max: 135000, type: "annual" }, modes: ["On-site"], relocate: false, notice: "2 weeks",
+      skills: [S("Site supervision", 15), S("Health & safety (Working at Heights)", 15), S("Procore", 4), S("Scheduling", 10), S("Concrete forming", 12)],
+      pains: ["Driving to Vaughan sites every day from Hamilton"],
+      motives: ["Projects in Hamilton, Burlington or Oakville", "Company truck"],
+      memory: [{ d: ago(70), tag: "Client feedback", t: "Northshore said he interviewed well in 2024 but they hired internally." }],
+      comms: [{ d: ago(70), type: "Call", s: "Open to west-GTA sites only." }],
+      consent: consent(300, "Verbal on call, confirmed by email", "Express"), resume: "Ryan_OConnor.pdf" },
+    { id: "c8", owner: "r1", name: "Elena Petrova", title: "HVAC Design Engineer", city: "Markham", prov: "ON", email: "elena.petrova@mail.example", phone: "(905) 555-0156",
+      years: 8, designations: ["P.Eng"], langs: ["English", "Russian"], auth: "Canadian citizen", status: "Passive",
+      salary: { min: 110000, max: 120000, type: "annual" }, modes: ["Remote", "Hybrid"], relocate: false, notice: "4 weeks",
+      skills: [S("Revit MEP", 7), S("HAP (Carrier)", 6), S("Energy modelling", 5), S("ASHRAE 90.1", 8), S("AutoCAD", 8)],
+      pains: ["Her team lead left; feels stuck on small retail fit-outs"],
+      motives: ["Institutional projects (hospitals, schools)", "At least 2 remote days"],
+      memory: [{ d: ago(220), tag: "Preference", t: "Turned down an offer in 2025 because of a 5-day office policy." }],
+      comms: [{ d: ago(220), type: "Email", s: "Shared market salary data for HVAC engineers in the GTA." }],
+      consent: consent(690, "Email reply", "Implied"), resume: "Elena_Petrova.pdf" },
+
+    { id: "c9", owner: "r2", name: "Mathieu Gagnon", title: "Automation Engineer", city: "Montréal", prov: "QC", email: "m.gagnon@mail.example", phone: "(514) 555-0133",
+      years: 11, designations: ["ing. (OIQ)"], langs: ["French", "English"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 110000, max: 125000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
+      skills: [S("PLC", 11), S("SCADA", 9), S("Power distribution design", 5), S("AutoCAD Electrical", 8)],
+      pains: ["Too much travel to remote mine sites"], motives: ["Hydro and water-treatment projects in Greater Montréal"],
+      memory: [{ d: ago(20), tag: "Preference", t: "Max 20% travel. Prefers French-speaking workplace." }],
+      comms: [{ d: ago(20), type: "Call", s: "Interested in Hydro-Laurentide automation role." }],
+      consent: consent(20, "Verbal on call, confirmed by email", "Express"), resume: "Mathieu_Gagnon_CV.pdf" },
+    { id: "c10", owner: "r2", name: "Camille Roy", title: "Project Manager", city: "Laval", prov: "QC", email: "camille.roy@mail.example", phone: "(450) 555-0120",
+      years: 8, designations: ["PMP"], langs: ["French", "English"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 100000, max: 115000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
+      skills: [S("MS Project", 8), S("Primavera P6", 5), S("Cost control", 8), S("Stakeholder management", 8), S("Contract administration (CCDC)", 4)],
+      pains: ["Reports to three directors"], motives: ["Single, clear reporting line", "Industrial projects"],
+      memory: [{ d: ago(45), tag: "Compensation", t: "Wants $108k minimum + 4 weeks vacation." }],
+      comms: [{ d: ago(45), type: "Meeting", s: "Video call. Open to new opportunities from January." }],
+      consent: consent(45, "Online form", "Express"), resume: "Camille_Roy.pdf" },
+    { id: "c11", owner: "r2", name: "Karim Benali", title: "Process Engineer (CPI)", city: "Québec City", prov: "QC", email: "karim.benali@mail.example", phone: "(418) 555-0177",
+      years: 3, designations: ["CPI (OIQ)"], langs: ["French", "English", "Arabic"], auth: "Permanent resident", status: "Passive",
+      salary: { min: 75000, max: 85000, type: "annual" }, modes: ["On-site"], relocate: true, notice: "2 weeks",
+      skills: [S("Aspen HYSYS", 3), S("P&ID", 3), S("HAZOP", 2), S("Lean / Six Sigma", 2)],
+      pains: ["Night shifts"], motives: ["Day-shift process role", "Open to moving to Montréal"],
+      memory: [{ d: ago(100), tag: "Personal", t: "Finishing OIQ professional practice exam in spring." }],
+      comms: [{ d: ago(100), type: "LinkedIn", s: "Replied to InMail. Passive." }],
+      consent: consent(100, "Email reply", "Express"), resume: "Karim_Benali_CV.pdf" },
+    { id: "c12", owner: "r2", name: "Olivia Grant", title: "Mechanical Designer", city: "Sherbrooke", prov: "QC", email: "olivia.grant@mail.example", phone: "(819) 555-0108",
+      years: 6, designations: [], langs: ["English", "French"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 32, max: 38, type: "hourly" }, modes: ["On-site"], relocate: false, notice: "1 week",
+      skills: [S("SolidWorks", 6), S("Inventor", 4), S("GD&T", 5)],
+      pains: ["Contract ending in December"], motives: ["Another 6–12 month contract close to home"],
+      memory: [{ d: ago(8), tag: "Compensation", t: "Contract rate $36/h minimum, incorporated? No, T4 through agency." }],
+      comms: [{ d: ago(8), type: "Call", s: "Available from 15 December." }],
+      consent: consent(8, "Verbal on call, confirmed by email", "Express"), resume: "Olivia_Grant.pdf" },
+    { id: "c13", owner: "r2", name: "Thomas Nguyen", title: "Structural Engineer", city: "Montréal", prov: "QC", email: "thomas.nguyen@mail.example", phone: "(514) 555-0198",
+      years: 6, designations: ["ing. (OIQ)"], langs: ["French", "English", "Vietnamese"], auth: "Employer-specific work permit (new employer needs LMIA)", status: "Active",
+      salary: { min: 95000, max: 105000, type: "annual" }, modes: ["Hybrid"], relocate: true, notice: "4 weeks",
+      skills: [S("ETABS", 5), S("SAP2000", 5), S("Revit", 4), S("Concrete design (CSA A23.3)", 6), S("Steel design (CSA S16)", 5)],
+      pains: ["Permit tied to current employer"], motives: ["Employer willing to file LMIA", "Bridge and transit projects"],
+      memory: [{ d: ago(60), tag: "Work authorization", t: "Closed permit. Any new employer would need an LMIA, or wait for PR (applied through PEQ)." }],
+      comms: [{ d: ago(60), type: "Call", s: "Explained LMIA timeline to candidate." }],
+      consent: consent(60, "Online form", "Express"), resume: "Thomas_Nguyen.pdf" },
+
+    { id: "c14", owner: "r3", name: "Aisha Robinson", title: "Senior Software Engineer", city: "Vancouver", prov: "BC", email: "aisha.r@mail.example", phone: "(604) 555-0114",
+      years: 9, designations: [], langs: ["English"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 165000, max: 185000, type: "annual" }, modes: ["Remote"], relocate: false, notice: "3 weeks",
+      skills: [S("Python", 9), S("AWS", 7), S("Kubernetes", 4), S("PostgreSQL", 8), S("React", 3)],
+      pains: ["Her company is moving to US-hours on-call"], motives: ["Remote, Pacific time team", "Fintech or climate tech"],
+      memory: [{ d: ago(15), tag: "Compensation", t: "$172k base + RSUs now. Needs $165k+ base, equity is a bonus." }],
+      comms: [{ d: ago(15), type: "Call", s: "Screened for Cascadia Fintech senior backend role." }],
+      consent: consent(15, "Online form", "Express"), resume: "Aisha_Robinson.pdf" },
+    { id: "c15", owner: "r3", name: "Liam Fraser", title: "Data Engineer", city: "Calgary", prov: "AB", email: "liam.fraser@mail.example", phone: "(403) 555-0122",
+      years: 5, designations: [], langs: ["English"], auth: "Permanent resident", status: "Passive",
+      salary: { min: 120000, max: 135000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "2 weeks",
+      skills: [S("Python", 5), S("SQL", 6), S("Airflow", 3), S("Snowflake", 3), S("dbt", 2)],
+      pains: ["Legacy SSIS stack"], motives: ["Modern data stack"],
+      memory: [{ d: ago(110), tag: "Preference", t: "Downtown Calgary only, takes the C-Train." }],
+      comms: [{ d: ago(110), type: "Email", s: "Sent two roles, both declined (on-site 5 days)." }],
+      consent: consent(110, "Email reply", "Express"), resume: "Liam_Fraser.pdf" },
+    { id: "c16", owner: "r3", name: "Wei Zhang", title: "Full-stack Developer", city: "Burnaby", prov: "BC", email: "wei.zhang@mail.example", phone: "(778) 555-0145",
+      years: 4, designations: [], langs: ["English", "Mandarin"], auth: "Open work permit (to Mar 2028)", status: "Active",
+      salary: { min: 105000, max: 120000, type: "annual" }, modes: ["Hybrid", "Remote"], relocate: false, notice: "2 weeks",
+      skills: [S("TypeScript", 4), S("React", 4), S("Node.js", 4), S("PostgreSQL", 3), S("AWS", 2)],
+      pains: ["Small team, no code review culture"], motives: ["Mentorship from senior engineers"],
+      memory: [{ d: ago(3), tag: "Work authorization", t: "PGWP to March 2028, no sponsorship needed now." }],
+      comms: [{ d: ago(3), type: "Call", s: "Intro call; sending two take-home friendly roles." }],
+      consent: consent(3, "Verbal on call, confirmed by email", "Express"), resume: "Wei_Zhang_Resume.pdf" },
+    { id: "c17", owner: "r3", name: "Noah Tremblay-Clarke", title: "DevOps Engineer", city: "Edmonton", prov: "AB", email: "noah.tc@mail.example", phone: "(780) 555-0102",
+      years: 7, designations: [], langs: ["English", "French"], auth: "Canadian citizen", status: "Passive",
+      salary: { min: 140000, max: 155000, type: "annual" }, modes: ["Remote"], relocate: false, notice: "4 weeks",
+      skills: [S("Terraform", 5), S("Kubernetes", 5), S("Azure", 6), S("CI/CD", 7), S("Python", 4)],
+      pains: ["On-call every second week"], motives: ["Fully remote", "Fair on-call rotation"],
+      memory: [{ d: ago(75), tag: "Preference", t: "Only fully remote roles, can travel quarterly." }],
+      comms: [{ d: ago(75), type: "LinkedIn", s: "Short update, still passive." }],
+      consent: consent(75, "Online form", "Express"), resume: "Noah_TC.pdf" },
+    { id: "c18", owner: "r3", name: "Grace Kim", title: "Product Manager", city: "Toronto", prov: "ON", email: "grace.kim@mail.example", phone: "(416) 555-0170",
+      years: 6, designations: [], langs: ["English", "Korean"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 130000, max: 145000, type: "annual" }, modes: ["Hybrid"], relocate: false, notice: "4 weeks",
+      skills: [S("Product strategy", 6), S("SQL", 4), S("Agile / Scrum", 6), S("Stakeholder management", 6)],
+      pains: ["Feature-factory roadmap"], motives: ["Ownership of a B2B product"],
+      memory: [{ d: ago(28), tag: "Preference", t: "Downtown Toronto hybrid, 2 days office max." }],
+      comms: [{ d: ago(28), type: "Meeting", s: "Coffee at King & Spadina. Active from November." }],
+      consent: consent(28, "Verbal on call, confirmed by email", "Express"), resume: "Grace_Kim.pdf" },
+    { id: "c19", owner: "r3", name: "Jordan Bell", title: "Controls Engineer", city: "Calgary", prov: "AB", email: "jordan.bell@mail.example", phone: "(403) 555-0189",
+      years: 8, designations: ["P.Eng"], langs: ["English"], auth: "Canadian citizen", status: "Active",
+      salary: { min: 125000, max: 140000, type: "annual" }, modes: ["On-site", "Hybrid"], relocate: true, notice: "3 weeks",
+      skills: [S("PLC", 8), S("SCADA", 7), S("Python", 3), S("Instrumentation", 8)],
+      pains: ["Fly-in/fly-out rotation"], motives: ["City-based role with occasional field visits"],
+      memory: [{ d: ago(50), tag: "Preference", t: "Ok with 25% field time. APEGA registered." }],
+      comms: [{ d: ago(50), type: "Call", s: "Interested in Prairie Energy controls role." }],
+      consent: consent(50, "Email reply", "Express"), resume: "Jordan_Bell.pdf" }
+  ];
+  const clients = [
+    { id: "k1", owner: "r1", name: "Lakeshore Structural Group", industry: "Consulting engineering", city: "Toronto", prov: "ON", size: 140,
+      contacts: [{ n: "Priscilla Wong", r: "Director of Engineering", e: "pwong@lakeshore.example" }],
+      prefs: ["Must hold P.Eng or be within 6 months of licensure", "Strong preference for high-rise residential experience", "Two-stage interview: technical test, then partner meeting"],
+      avoid: ["Job changes under 18 months without a clear reason"], fee: "20% of first-year base", guarantee: "90 days", lastContact: ago(10) },
+    { id: "k2", owner: "r1", name: "Northshore Builders Inc.", industry: "General contractor", city: "Vaughan", prov: "ON", size: 320,
+      contacts: [{ n: "Dev Patel", r: "VP Construction", e: "dpatel@northshore.example" }],
+      prefs: ["Ask about safety record, COR and Working at Heights", "PMs must have delivered a mid-rise from excavation to occupancy"],
+      avoid: ["Owner-side PMs with no site experience"], fee: "18% of first-year base", guarantee: "60 days", lastContact: ago(22) },
+    { id: "k3", owner: "r1", name: "Greenfield MEP Consultants", industry: "Mechanical & electrical engineering", city: "Markham", prov: "ON", size: 60,
+      contacts: [{ n: "Laura Smith", r: "HR Manager", e: "lsmith@greenfieldmep.example" }],
+      prefs: ["Revit MEP is mandatory", "Open to EITs; offers a P.Eng mentorship plan", "Hybrid, 3 days in Markham office"],
+      avoid: [], fee: "18% of first-year base", guarantee: "90 days", lastContact: ago(5) },
+    { id: "k4", owner: "r2", name: "Hydro-Laurentide Industriel", industry: "Utilities & automation", city: "Montréal", prov: "QC", size: 900,
+      contacts: [{ n: "Isabelle Fortin", r: "Conseillère en acquisition de talents", e: "ifortin@hlaurentide.example" }],
+      prefs: ["French is the working language (Charter of the French Language)", "OIQ membership required for any 'engineer' title", "Max 20% travel"],
+      avoid: [], fee: "22% of first-year base", guarantee: "120 days", lastContact: ago(14) },
+    { id: "k5", owner: "r2", name: "Ateliers Saint-Laurent", industry: "Manufacturing", city: "Sherbrooke", prov: "QC", size: 85,
+      contacts: [{ n: "Marc Bouchard", r: "Directeur d'usine", e: "mbouchard@asl.example" }],
+      prefs: ["Contract designers through agency, 6-month minimum", "Bilingual drawings and documentation"],
+      avoid: [], fee: "Bill rate = pay rate × 1.35", guarantee: "Replacement within 2 weeks", lastContact: ago(30) },
+    { id: "k6", owner: "r3", name: "Cascadia Fintech", industry: "Financial technology", city: "Vancouver", prov: "BC", size: 210,
+      contacts: [{ n: "Sam Reyes", r: "Head of Talent", e: "sam@cascadia.example" }],
+      prefs: ["Remote within Canada only (payroll set up in BC, AB, ON, QC)", "Take-home exercise of 3 hours or less", "Values open-source contributions"],
+      avoid: ["Candidates needing US work authorization"], fee: "20% of first-year base", guarantee: "90 days", lastContact: ago(9) },
+    { id: "k7", owner: "r3", name: "Prairie Energy Systems", industry: "Energy", city: "Calgary", prov: "AB", size: 450,
+      contacts: [{ n: "Tom Hughes", r: "Engineering Manager", e: "thughes@prairie.example" }],
+      prefs: ["APEGA registration for engineering roles", "Field visits about 25% of the time"],
+      avoid: [], fee: "20% of first-year base", guarantee: "90 days", lastContact: ago(41) }
+  ];
+  const AI = "We use AI-assisted tools to help screen and match applications. A recruiter reviews every application.";
+  const jobs = [
+    { id: "j1", owner: "r1", client: "k1", title: "Intermediate Structural Engineer", city: "Toronto", prov: "ON", modes: ["Hybrid"], type: "Permanent",
+      salary: { min: 105000, max: 125000, type: "annual" }, must: ["ETABS", "Revit", "Concrete design (CSA A23.3)"], nice: ["SAFE", "Steel design (CSA S16)"], designations: ["P.Eng"], langs: [],
+      status: "Open", opened: ago(21), posting: { ai: AI, vacancy: "existing", fr: false, text: "Design of high-rise residential towers in the GTA. P.Eng required." },
+      pipeline: [{ c: "c1", stage: "Submitted" }] },
+    { id: "j2", owner: "r1", client: "k2", title: "Senior Project Manager, Mid-rise Residential", city: "Vaughan", prov: "ON", modes: ["On-site"], type: "Permanent",
+      salary: { min: 130000, max: 165000, type: "annual" }, must: ["Procore", "Primavera P6", "Contract administration (CCDC)", "Cost control"], nice: ["Scheduling"], designations: [], langs: [],
+      status: "Open", opened: ago(35), posting: { ai: "", vacancy: "existing", fr: false, text: "Lead 8–12 storey residential projects from excavation to occupancy." },
+      pipeline: [] },
+    { id: "j3", owner: "r1", client: "k3", title: "Electrical Designer / EIT", city: "Markham", prov: "ON", modes: ["Hybrid"], type: "Permanent",
+      salary: { min: 80000, max: 140000, type: "annual" }, must: ["Revit MEP", "Power distribution design", "Canadian Electrical Code (CEC)"], nice: ["ETAP"], designations: [], langs: [],
+      status: "Open", opened: ago(12), posting: { ai: AI, vacancy: "", fr: false, text: "Electrical design for healthcare projects. Canadian experience required." },
+      pipeline: [{ c: "c3", stage: "Contacted" }] },
+    { id: "j4", owner: "r1", client: "k3", title: "Mechanical (HVAC) Engineer", city: "Markham", prov: "ON", modes: ["Hybrid"], type: "Permanent",
+      salary: { min: 105000, max: 125000, type: "annual" }, must: ["Revit MEP", "ASHRAE 90.1", "Energy modelling"], nice: ["HAP (Carrier)"], designations: ["P.Eng"], langs: [],
+      status: "Open", opened: ago(4), posting: { ai: AI, vacancy: "existing", fr: false, text: "Institutional HVAC design (schools, long-term care)." },
+      pipeline: [] },
+    { id: "j5", owner: "r2", client: "k4", title: "Ingénieur(e) en automatisation", city: "Montréal", prov: "QC", modes: ["Hybrid"], type: "Permanent",
+      salary: { min: 105000, max: 130000, type: "annual" }, must: ["PLC", "SCADA"], nice: ["Power distribution design"], designations: ["ing. (OIQ)"], langs: ["French"],
+      status: "Open", opened: ago(18), posting: { ai: AI, vacancy: "existing", fr: true, text: "Automatisation de postes et centrales. Membre de l'OIQ requis." },
+      pipeline: [{ c: "c9", stage: "Interview" }] },
+    { id: "j6", owner: "r2", client: "k5", title: "Mechanical Designer (6-month contract)", city: "Sherbrooke", prov: "QC", modes: ["On-site"], type: "Contract",
+      salary: { min: 34, max: 40, type: "hourly" }, must: ["SolidWorks", "GD&T"], nice: ["Inventor"], designations: [], langs: [],
+      status: "Open", opened: ago(6), posting: { ai: "", vacancy: "existing", fr: false, text: "Conception de gabarits et outillage. Contrat de 6 mois." },
+      pipeline: [] },
+    { id: "j7", owner: "r3", client: "k6", title: "Senior Backend Engineer", city: "Vancouver", prov: "BC", modes: ["Remote"], type: "Permanent",
+      salary: { min: 160000, max: 190000, type: "annual" }, must: ["Python", "AWS", "PostgreSQL"], nice: ["Kubernetes"], designations: [], langs: [],
+      status: "Open", opened: ago(16), posting: { ai: AI, vacancy: "existing", fr: false, text: "Payments platform team. Remote within Canada." },
+      pipeline: [{ c: "c14", stage: "Submitted" }] },
+    { id: "j8", owner: "r3", client: "k7", title: "Controls Engineer", city: "Calgary", prov: "AB", modes: ["On-site", "Hybrid"], type: "Permanent",
+      salary: { min: 120000, max: 145000, type: "annual" }, must: ["PLC", "SCADA"], nice: ["Python", "Instrumentation"], designations: ["P.Eng"], langs: [],
+      status: "Open", opened: ago(27), posting: { ai: "", vacancy: "existing", fr: false, text: "Controls for gas processing facilities. 25% field." },
+      pipeline: [] }
+  ];
+  return { recruiters, candidates, clients, jobs };
+}
+
+/* ---------------- storage ---------------- */
+let DB, me = null;
+function load() {
+  try { const raw = localStorage.getItem(STORE_KEY); if (raw) { DB = JSON.parse(raw); } } catch (e) { DB = null; }
+  if (!DB || !DB.candidates) DB = seed();
+  try { me = sessionStorage.getItem(STORE_KEY + "-me"); } catch (e) { me = null; }
+  if (!DB.recruiters.some(r => r.id === me)) me = null;
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); } catch (e) { /* storage unavailable */ } }
+function setMe(id) { me = id; try { id ? sessionStorage.setItem(STORE_KEY + "-me", id) : sessionStorage.removeItem(STORE_KEY + "-me"); } catch (e) {} }
+
+/* ---------------- helpers ---------------- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const initials = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+const mine = list => list.filter(x => x.owner === me);
+const recruiter = id => DB.recruiters.find(r => r.id === id);
+const cand = id => DB.candidates.find(c => c.id === id);
+const client = id => DB.clients.find(c => c.id === id);
+const job = id => DB.jobs.find(j => j.id === id);
+const fmtK = n => "$" + (n >= 1000 ? Math.round(n / 1000) + "k" : n);
+const fmtPay = s => !s ? "Not set" : s.type === "hourly" ? `$${s.min}–$${s.max}/h` : `${fmtK(s.min)}–${fmtK(s.max)}`;
+const annual = (v, t) => t === "hourly" ? v * 2080 : v;
+const fmtDate = iso => new Date(iso + "T12:00:00").toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
+const lastContact = c => c.comms.length ? c.comms.map(x => x.d).sort().at(-1) : null;
+function recency(c) {
+  const lc = lastContact(c); if (!lc) return { days: 9999, cls: "bad", label: "Never contacted" };
+  const d = daysSince(lc);
+  const label = d === 0 ? "Today" : d === 1 ? "Yesterday" : d < 60 ? `${d} days ago` : `${Math.round(d / 30)} months ago`;
+  return { days: d, cls: d <= 30 ? "good" : d <= 90 ? "warn" : "bad", label };
+}
+function consentState(c) {
+  if (!c.consent || c.consent.method === "Pending") return { cls: "bad", label: "Consent pending" };
+  const left = -daysSince(c.consent.retainUntil);
+  if (left < 0) return { cls: "bad", label: "Retention expired" };
+  if (left <= 90) return { cls: "warn", label: `Retention ends in ${left} days` };
+  return { cls: "good", label: "Consent on file" };
+}
+const icons = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3 2.4 3.5 5.2"/></svg>',
+  brief: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></svg>',
+  building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 10h4a1 1 0 0 1 1 1v10M2 21h20M8 8h3M8 12h3M8 16h3"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>'
+};
+
+/* ---------------- natural-language search ---------------- */
+const SKILL_ALIASES = {
+  "p6": "Primavera P6", "primavera": "Primavera P6", "k8s": "Kubernetes", "ts": "TypeScript", "node": "Node.js", "postgres": "PostgreSQL",
+  "revit mep": "Revit MEP", "cec": "Canadian Electrical Code (CEC)", "electrical code": "Canadian Electrical Code (CEC)", "ccdc": "Contract administration (CCDC)",
+  "contract admin": "Contract administration (CCDC)", "contract administration": "Contract administration (CCDC)", "concrete": "Concrete design (CSA A23.3)", "steel": "Steel design (CSA S16)",
+  "fea": "FEA (ANSYS)", "ansys": "FEA (ANSYS)", "six sigma": "Lean / Six Sigma", "lean": "Lean / Six Sigma", "hysys": "Aspen HYSYS", "stormwater": "Stormwater management",
+  "scrum": "Agile / Scrum", "agile": "Agile / Scrum", "energy model": "Energy modelling", "energy modeling": "Energy modelling", "hap": "HAP (Carrier)", "ashrae": "ASHRAE 90.1",
+  "working at heights": "Health & safety (Working at Heights)", "safety": "Health & safety (Working at Heights)", "obc": "Ontario Building Code", "building code": "Ontario Building Code",
+  "plc": "PLC", "scada": "SCADA", "solidworks": "SolidWorks", "envelope": "Building science"
+};
+const REGIONS = {
+  "gta": ["Toronto", "Mississauga", "Brampton", "Markham", "Vaughan", "Oakville"], "greater toronto": ["Toronto", "Mississauga", "Brampton", "Markham", "Vaughan", "Oakville"],
+  "greater montreal": ["Montréal", "Laval"], "lower mainland": ["Vancouver", "Burnaby"], "kw": ["Waterloo", "Kitchener"], "kitchener-waterloo": ["Waterloo", "Kitchener"]
+};
+const CITIES = { "toronto": "ON", "mississauga": "ON", "brampton": "ON", "markham": "ON", "vaughan": "ON", "oakville": "ON", "hamilton": "ON", "waterloo": "ON", "kitchener": "ON", "ottawa": "ON",
+  "quebec city": "QC", "montreal": "QC", "laval": "QC", "sherbrooke": "QC", "gatineau": "QC", "vancouver": "BC", "burnaby": "BC", "calgary": "AB", "edmonton": "AB", "halifax": "NS", "winnipeg": "MB" };
+const CITY_LABEL = { "montreal": "Montréal", "quebec city": "Québec City" };
+const PROVS = { "ontario": "ON", "quebec": "QC", "british columbia": "BC", "alberta": "AB", "nova scotia": "NS", "manitoba": "MB", "saskatchewan": "SK", "new brunswick": "NB", " bc": "BC", " qc": "QC" };
+const STOP = new Set("a an and or the in at on of for to with who whom that are is be been has have having had any some all me show find get give list look looking search need want someone people person candidate candidates profile profiles talent near around based from within open experience exp also plus our my i we can could would like good strong great senior junior intermediate".split(" "));
+
+function knownSkills() {
+  const set = new Set();
+  DB.candidates.forEach(c => c.skills.forEach(s => set.add(s.n)));
+  DB.jobs.forEach(j => [...j.must, ...j.nice].forEach(s => set.add(s)));
+  return [...set];
+}
+function parseQuery(q) {
+  let t = " " + norm(q).replace(/[,;!?]/g, " ") + " ";
+  const f = { skills: [], cities: [], provs: [], terms: [], labels: [] };
+  const take = (re, fn) => { t = t.replace(re, (...m) => { fn(...m); return " "; }); };
+
+  take(/\b(?:not|haven'?t|have not|no)\s+(?:been\s+)?(?:contacted|spoken(?: to)?|talked(?: to)?|reached)(?:\s+(?:in|for|over))?(?:\s+the)?(?:\s+(?:last|past))?\s+(\d+|a|one|two|three|six)\s*(day|week|month|year)s?\b/g, (_, n, u) => {
+    const num = { a: 1, one: 1, two: 2, three: 3, six: 6 }[n] || +n; f.staleDays = num * { day: 1, week: 7, month: 30, year: 365 }[u]; f.labels.push(["stale", `No contact in ${num} ${u}${num > 1 ? "s" : ""}`]); });
+  take(/\b(?:contacted|spoke(?:n)?(?: to)?|talked(?: to)?)\s+(?:in\s+)?(?:the\s+)?(?:last|past)\s+(\d+|a|one|two|three|six)\s*(day|week|month)s?\b/g, (_, n, u) => {
+    const num = { a: 1, one: 1, two: 2, three: 3, six: 6 }[n] || +n; f.recentDays = num * { day: 1, week: 7, month: 30 }[u]; f.labels.push(["recent", `Contacted in last ${num} ${u}${num > 1 ? "s" : ""}`]); });
+  const k = n => +n < 1000 ? +n * 1000 : +n;
+  take(/\$?\s*(\d{2,3})\s*k?\s*(?:-|–|to)\s*\$?\s*(\d{2,3})\s*k\b/g, (_, a, b) => { f.minPay = k(a); f.maxPay = k(b); f.labels.push(["band", `Budget ${fmtK(f.minPay)}–${fmtK(f.maxPay)}`]); });
+  take(/(?:\bunder|\bbelow|\bless than|\bmax(?:imum)?|\bup to|<|\bno more than|\bat most)\s*\$?\s*(\d+)\s*(?:k|,?000)?\b/g, (_, n) => { f.maxPay = k(n); f.labels.push(["maxPay", `Expects ≤ ${fmtK(f.maxPay)}`]); });
+  take(/(?:\bover|\babove|\bmore than|\bat least|\bmin(?:imum)?|>)\s*\$?\s*(\d+)\s*(?:k|,?000)?\b/g, (_, n) => { f.minPay = k(n); f.labels.push(["minPay", `Expects ≥ ${fmtK(f.minPay)}`]); });
+  take(/\b(\d{1,2})\s*\+?\s*(?:years?|yrs?)\b(?:\s+of)?/g, (_, n) => { f.minYears = +n; f.labels.push(["years", `${n}+ years`]); });
+  take(/\b(?:willing to |open to |can |could )?relocat\w*\b/g, () => { f.relocate = true; f.labels.push(["relocate", "Open to relocation"]); });
+  take(/\b(?:fully\s+)?remote\b/g, () => { f.mode = "Remote"; f.labels.push(["mode", "Remote"]); });
+  take(/\bhybrid\b/g, () => { f.mode = "Hybrid"; f.labels.push(["mode", "Hybrid"]); });
+  take(/\b(?:on-?site|in office|in-office)\b/g, () => { f.mode = "On-site"; f.labels.push(["mode", "On-site"]); });
+  take(/\b(?:bilingual|french[- ]speaking|speaks? french|french)\b/g, () => { f.french = true; f.labels.push(["french", "Speaks French"]); });
+  take(/\b(?:no sponsorship|without sponsorship|no lmia|authori[sz]ed to work|citizens? or pr|work authori[sz]ation)\b/g, () => { f.noLmia = true; f.labels.push(["noLmia", "No LMIA needed"]); });
+  take(/\b(?:p\.?\s?eng|professional engineers?|licensed engineers?)\b/g, () => { f.desig = "P.Eng"; f.labels.push(["desig", "P.Eng"]); });
+  take(/(?:\bing\.(?=\s)|\boiq\b)/g, () => { f.desig = "ing."; f.labels.push(["desig", "ing. (OIQ)"]); });
+  take(/\beit\b/g, () => { f.desig = "EIT"; f.labels.push(["desig", "EIT"]); });
+  take(/\bpmp\b/g, () => { f.desig = "PMP"; f.labels.push(["desig", "PMP"]); });
+  take(/\b(?:actively looking|active|available)\b/g, () => { f.active = true; f.labels.push(["active", "Active candidates"]); });
+
+  Object.entries(REGIONS).forEach(([k, list]) => { if (t.includes(" " + k + " ")) { t = t.replace(" " + k + " ", " "); f.cities.push(...list); f.labels.push(["loc:" + k, k.toUpperCase() === "GTA" ? "GTA" : k.replace(/\b\w/g, c => c.toUpperCase())]); } });
+  Object.keys(CITIES).sort((a, b) => b.length - a.length).forEach(k => { if (t.includes(" " + k + " ")) { t = t.replace(" " + k + " ", " "); const lbl = CITY_LABEL[k] || k.replace(/\b\w/g, c => c.toUpperCase()); f.cities.push(lbl); f.labels.push(["loc:" + k, lbl]); } });
+  Object.entries(PROVS).forEach(([k, p]) => { if (t.includes(k + " ")) { t = t.replace(k + " ", " "); if (!f.provs.includes(p)) { f.provs.push(p); f.labels.push(["prov:" + p, p]); } } });
+
+  const skills = knownSkills();
+  const aliasKeys = Object.keys(SKILL_ALIASES).sort((a, b) => b.length - a.length);
+  skills.sort((a, b) => b.length - a.length).forEach(s => { const k = norm(s); if (t.includes(" " + k + " ")) { t = t.replace(" " + k + " ", " "); if (!f.skills.includes(s)) f.skills.push(s); } });
+  aliasKeys.forEach(a => { const re = new RegExp("\\b" + a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b"); if (re.test(t)) { t = t.replace(re, " "); const s = SKILL_ALIASES[a]; if (!f.skills.includes(s)) f.skills.push(s); } });
+  f.skills.forEach(s => f.labels.push(["skill:" + s, s]));
+
+  f.terms = t.split(/\s+/).map(w => w.replace(/[^a-z0-9+#./-]/g, "")).filter(w => w.length > 2 && !STOP.has(w) && !/^\d+$/.test(w)).map(w => w.replace(/(ers|ors|s)$/, m => m === "ers" ? "er" : m === "ors" ? "or" : ""));
+  f.terms.forEach(w => f.labels.push(["term:" + w, `“${w}”`]));
+  return f;
+}
+function dropFilter(f, key) {
+  const [kind, val] = key.split(/:(.*)/s);
+  if (kind === "skill") f.skills = f.skills.filter(s => s !== val);
+  else if (kind === "term") f.terms = f.terms.filter(s => s !== val);
+  else if (kind === "loc") { const lbls = REGIONS[val] || [CITY_LABEL[val] || val.replace(/\b\w/g, c => c.toUpperCase())]; f.cities = f.cities.filter(c => !lbls.includes(c)); }
+  else if (kind === "prov") f.provs = f.provs.filter(p => p !== val);
+  else if (kind === "band") { delete f.minPay; delete f.maxPay; }
+  else if (kind === "mode") delete f.mode;
+  else delete f[kind];
+  f.labels = f.labels.filter(l => l[0] !== key);
+}
+function candidateText(c) { return norm([c.title, ...c.skills.map(s => s.n), ...c.designations, ...c.memory.map(m => m.t), ...c.pains, ...c.motives].join(" ")); }
+function runSearch(f, pool) {
+  const out = [];
+  let relaxedTerms = false;
+  const evalSet = useTerms => {
+    const res = [];
+    for (const c of pool) {
+      const why = [];
+      if (f.cities.length || f.provs.length) {
+        const inCity = f.cities.includes(c.city), inProv = f.provs.includes(c.prov);
+        const relocOk = f.relocate || c.relocate; const remoteOk = c.modes.includes("Remote");
+        if (inCity || inProv) why.push(`Based in ${c.city}, ${c.prov}`);
+        else if (relocOk && c.relocate) why.push(`Open to relocating from ${c.city}`);
+        else if (remoteOk && f.mode === "Remote") why.push("Remote");
+        else continue;
+      }
+      if (f.relocate && !c.relocate && !why.some(w => w.startsWith("Based"))) continue;
+      if (f.relocate && c.relocate && !why.length) why.push("Open to relocation");
+      const sMin = annual(c.salary.min, c.salary.type);
+      if (f.maxPay && sMin > f.maxPay) continue;
+      if (f.minPay && annual(c.salary.max, c.salary.type) < f.minPay) continue;
+      if (f.maxPay || f.minPay) why.push(`Expects ${fmtPay(c.salary)}`);
+      const r = recency(c);
+      if (f.staleDays && r.days < f.staleDays) continue;
+      if (f.recentDays && r.days > f.recentDays) continue;
+      if (f.staleDays || f.recentDays) why.push(`Last contact ${r.label.toLowerCase()}`);
+      if (f.mode && !c.modes.includes(f.mode)) continue;
+      if (f.mode) why.push(`Open to ${f.mode.toLowerCase()}`);
+      if (f.french && !c.langs.includes("French")) continue;
+      if (f.french) why.push("Speaks French");
+      if (f.noLmia && /lmia/i.test(c.auth)) continue;
+      if (f.desig && !c.designations.some(d => norm(d).startsWith(norm(f.desig)))) continue;
+      if (f.desig) why.push(c.designations.join(", "));
+      if (f.minYears && c.years < f.minYears) continue;
+      if (f.minYears) why.push(`${c.years} years' experience`);
+      if (f.active && c.status !== "Active") continue;
+      if (c.status === "Do not contact") continue;
+      let score = 50;
+      const hits = f.skills.filter(s => c.skills.some(x => x.n === s));
+      if (f.skills.length) { if (!hits.length) continue; score += 40 * hits.length / f.skills.length; }
+      if (useTerms && f.terms.length) {
+        const txt = candidateText(c);
+        const termHits = f.terms.filter(w => txt.includes(w));
+        if (termHits.length < f.terms.length) continue;
+        if (termHits.some(w => norm(c.title).includes(w))) score += 8;
+      }
+      score -= Math.min(r.days, 365) / 365 * 6;
+      res.push({ c, why, hits, score });
+    }
+    return res;
+  };
+  let res = evalSet(true);
+  if (!res.length && f.terms.length) { res = evalSet(false); relaxedTerms = res.length > 0; }
+  res.sort((a, b) => b.score - a.score);
+  out.push(...res);
+  return { results: out, relaxedTerms };
+}
+
+/* ---------------- job matching ---------------- */
+function matchScore(c, j) {
+  const has = s => c.skills.some(x => x.n === s);
+  const mustHit = j.must.filter(has), niceHit = j.nice.filter(has);
+  const skills = Math.round((j.must.length ? 45 * mustHit.length / j.must.length : 45) + (j.nice.length ? 10 * niceHit.length / j.nice.length : 10));
+  let loc = 0, locNote;
+  if (j.modes.includes("Remote") && c.modes.includes("Remote")) { loc = 15; locNote = "Remote on both sides"; }
+  else if (c.city === j.city) { loc = 15; locNote = `Lives in ${c.city}`; }
+  else if (REGIONS.gta.includes(c.city) && REGIONS.gta.includes(j.city)) { loc = 12; locNote = "Same region (GTA)"; }
+  else if (c.prov === j.prov) { loc = 8; locNote = `Same province, ${c.city}`; }
+  else if (c.relocate) { loc = 6; locNote = "Would relocate"; }
+  else locNote = `${c.city}, ${c.prov}, not open to relocation`;
+  const modeOk = c.modes.some(m => j.modes.includes(m)) ? 5 : 0;
+  const askMin = annual(c.salary.min, c.salary.type), budget = annual(j.salary.max, j.salary.type);
+  let pay = 0, payNote;
+  if (askMin <= budget) { pay = 15; payNote = "Ask fits the range"; }
+  else if (askMin <= budget * 1.08) { pay = 7; payNote = `Ask is ${fmtK(askMin - budget)} above the top of range`; }
+  else payNote = `Ask is ${fmtK(askMin - budget)} above the top of range`;
+  const desigOk = !j.designations.length || j.designations.some(d => c.designations.some(x => norm(x).startsWith(norm(d).split(" ")[0])));
+  const langOk = !j.langs.length || j.langs.every(l => c.langs.includes(l));
+  const authOk = !/lmia/i.test(c.auth);
+  const total = Math.max(0, Math.min(100, skills + loc + modeOk + pay + (desigOk ? 6 : 0) + (langOk ? 2 : 0) + (authOk ? 2 : 0)));
+  const gaps = [];
+  j.must.filter(s => !has(s)).forEach(s => gaps.push(`Missing ${s}`));
+  if (!desigOk) gaps.push(`No ${j.designations.join(" / ")}`);
+  if (!langOk) gaps.push(`Does not list ${j.langs.join(", ")}`);
+  if (!authOk) gaps.push("Needs an LMIA to change employer");
+  if (pay < 15) gaps.push(payNote);
+  if (!modeOk) gaps.push(`Wants ${c.modes.join("/")}, job is ${j.modes.join("/")}`);
+  if (loc === 0) gaps.push(locNote);
+  return { total, parts: [["Skills", skills, 55], ["Location", loc + modeOk, 20], ["Salary", pay, 15], ["Credentials", (desigOk ? 6 : 0) + (langOk ? 2 : 0) + (authOk ? 2 : 0), 10]], mustHit, niceHit, gaps, locNote, payNote };
+}
+
+/* ---------------- posting compliance (Canadian rules) ---------------- */
+function postingChecks(j) {
+  const k = client(j.client); const out = [];
+  const pay = j.salary && j.salary.min && j.salary.max;
+  const payRule = { ON: "Ontario ESA (from 1 Jan 2026)", BC: "BC Pay Transparency Act", PE: "PEI Employment Standards Act" }[j.prov];
+  if (payRule) out.push(pay ? ["good", `Pay range disclosed (${payRule})`] : ["bad", `Pay range missing — required under ${payRule}`]);
+  else out.push(pay ? ["good", "Pay range disclosed (best practice in " + j.prov + ")"] : ["warn", "No pay range; not mandatory in " + j.prov + " but expected by candidates"]);
+  if (j.prov === "ON" && (k?.size ?? 25) >= 25) {
+    const width = annual(j.salary.max, j.salary.type) - annual(j.salary.min, j.salary.type);
+    if (pay && annual(j.salary.max, j.salary.type) <= 200000 && width > 50000) out.push(["bad", `Range is ${fmtK(width)} wide; Ontario caps it at $50k for jobs paying up to $200k`]);
+    else if (pay) out.push(["good", "Range width within Ontario's $50k limit"]);
+    out.push(j.posting.ai ? ["good", "States whether AI is used to screen or assess applicants"] : ["bad", "Missing AI-use statement (Ontario requires disclosure of AI screening)"]);
+    out.push(/canadian experience/i.test(j.posting.text) ? ["bad", "Asks for “Canadian experience” — not allowed in Ontario postings or forms"] : ["good", "No Canadian-experience requirement"]);
+    out.push(j.posting.vacancy ? ["good", "States the vacancy is an existing role"] : ["bad", "Must state whether the posting is for an existing vacancy"]);
+    out.push(["good", "45-day post-interview reply reminder is on for this job"]);
+  }
+  if (j.prov === "QC") out.push(j.posting.fr ? ["good", "French version of posting (Charter of the French Language)"] : ["warn", "Publish a French version; Québec postings must be available in French"]);
+  if (j.prov === "ON") { const r = recruiter(j.owner); out.push(/ON recruiter licence/.test(r.licence) ? ["good", `Recruiter licensed under Ontario ESA (${r.licence.replace("ON recruiter licence ", "")})`] : ["warn", "Recruiting for Ontario: agency needs an Ontario recruiter licence"]); }
+  return out;
+}
+
+/* ---------------- UI state ---------------- */
+const ui = { view: "home", id: null, query: "", filters: null, candFilter: "all", candText: "", toast: null, modal: null, upload: null };
+function go(view, id = null) { ui.view = view; ui.id = id; ui.modal = null; render(); window.scrollTo(0, 0); }
+function toast(msg) { ui.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(() => { ui.toast = null; render(); }, 2400); }
+
+/* ---------------- views ---------------- */
+function viewLogin() {
+  const sel = ui.loginPick || "r1";
+  return `<div class="login"><form class="login-card" id="login-form">
+    <div class="brand"><span class="brand-mark">Tb</span>TalentBook</div>
+    <div><h1 style="font-size:1.4rem">Sign in to your desk</h1><p class="muted" style="margin-top:4px">Northbound Talent Partners · shared agency workspace. Each recruiter sees only their own candidates, clients and jobs.</p></div>
+    <div class="who" role="group" aria-label="Recruiter">${DB.recruiters.map(r => `
+      <button type="button" data-pick="${r.id}" aria-pressed="${r.id === sel}"><span class="avatar">${r.initials}</span><span><strong>${esc(r.name)}</strong><br><span class="muted" style="font-size:.8rem">${esc(r.desk)}</span></span></button>`).join("")}</div>
+    <div class="field"><label for="login-email">Email</label><input class="input" id="login-email" value="${esc(recruiter(sel).email)}" autocomplete="username"></div>
+    <div class="field"><label for="login-pw">Password</label><input class="input" id="login-pw" type="password" value="demo" autocomplete="current-password"></div>
+    ${ui.loginErr ? `<p class="err">${esc(ui.loginErr)}</p>` : ""}
+    <button class="btn primary" style="justify-content:center;height:42px">Sign in</button>
+    <p class="demo-note">Demo accounts. Password for all three is <span class="num">demo</span>. Data stays in this browser.</p>
+  </form></div>`;
+}
+function navBtn(view, label, icon, count) {
+  const cur = ui.view === view || ui.view === view.replace(/s$/, "");
+  return `<button class="nav-btn" data-go="${view}" ${cur ? 'aria-current="page"' : ""}>${icons[icon]}<span>${label}</span>${count != null ? `<span class="count">${count}</span>` : ""}</button>`;
+}
+function shell(inner) {
+  const r = recruiter(me);
+  return `<div class="shell">
+    <nav class="rail" aria-label="Main">
+      <div class="brand"><span class="brand-mark">Tb</span>TalentBook</div>
+      ${navBtn("home", "Ask", "search")}
+      ${navBtn("candidates", "Candidates", "people", mine(DB.candidates).length)}
+      ${navBtn("jobs", "Jobs", "brief", mine(DB.jobs).filter(j => j.status === "Open").length)}
+      ${navBtn("clients", "Clients", "building", mine(DB.clients).length)}
+      ${navBtn("compliance", "Compliance", "shield")}
+      <div class="rail-foot">
+        <div class="me"><span class="avatar">${r.initials}</span><div><strong>${esc(r.name)}</strong><span>${esc(r.desk.split(" · ")[0])}</span></div></div>
+        <button class="btn ghost sm" data-act="logout">Sign out</button>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <form id="top-search" role="search">${icons.search}<input class="input" id="top-q" placeholder="Ask about your candidates, e.g. “P.Eng structural engineers in the GTA under 130k”" value="${esc(ui.query)}" aria-label="Search candidates"></form>
+        <button class="btn primary" data-act="upload">${icons.upload}<span>Upload résumé</span></button>
+      </div>
+      <main class="content">${inner}</main>
+    </div>
+  </div>`;
+}
+
+function candRow(c, extra = {}) {
+  const r = recency(c);
+  return `<button class="cand" data-open="${c.id}">
+    <span class="avatar">${initials(c.name)}</span>
+    <span class="cand-main">
+      <span class="row" style="gap:8px"><span class="cand-name">${esc(c.name)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}</span>
+      <span class="cand-meta"><span>${esc(c.title)}</span><span>${esc(c.city)}, ${c.prov}</span><span>${c.years} yrs</span><span>${c.modes.join(" / ")}</span></span>
+      <span class="chips">${c.skills.slice(0, 6).map(s => `<span class="chip ${extra.hits?.includes(s.n) ? "hit" : ""}">${esc(s.n)}</span>`).join("")}</span>
+      ${extra.why?.length ? `<span class="why">${esc(extra.why.join(" · "))}</span>` : ""}
+    </span>
+    <span class="cand-side">
+      <span class="row" style="gap:6px"><span class="dot ${r.cls}"></span>${r.label}</span>
+      <span class="num">${fmtPay(c.salary)}</span>
+      <span class="muted">${esc(c.status)}</span>
+    </span>
+  </button>`;
+}
+
+function viewHome() {
+  const cs = mine(DB.candidates);
+  const follow = cs.filter(c => recency(c).days >= 60 && c.status !== "Placed").sort((a, b) => recency(b).days - recency(a).days);
+  const consentIssues = cs.filter(c => consentState(c).cls !== "good");
+  const openJobs = mine(DB.jobs).filter(j => j.status === "Open");
+  const r = recruiter(me);
+  let results = "";
+  if (ui.filters) {
+    const { results: res, relaxedTerms } = runSearch(ui.filters, cs);
+    results = `<section class="stack">
+      <div class="panel-head"><h2>${res.length} candidate${res.length === 1 ? "" : "s"} found</h2><span class="spacer"></span><button class="btn ghost sm" data-act="clear-search">Clear search</button></div>
+      ${relaxedTerms ? `<div class="notice info">No title matched ${ui.filters.terms.map(w => `“${esc(w)}”`).join(", ")} exactly. Showing the closest candidates on your other criteria.</div>` : ""}
+      <div class="list">${res.length ? res.map(x => candRow(x.c, x)).join("") : `<div class="empty">No candidates on your desk match all of these. Remove a filter above to widen the search.</div>`}</div>
+    </section>`;
+  }
+  const examples = {
+    r1: ["P.Eng structural engineers in the GTA under 130k", "Candidates not contacted in 3 months", "Revit MEP designers open to hybrid", "Bilingual civil engineers in Ontario"],
+    r2: ["Bilingual project managers in Greater Montréal", "Engineers with PLC and SCADA, no LMIA", "Mechanical designers in Quebec", "Candidates not contacted in 2 months"],
+    r3: ["Remote Python engineers over 150k", "Developers in the Lower Mainland open to hybrid", "Controls engineers willing to relocate", "Candidates not contacted in 2 months"]
+  }[me] || [];
+  return `
+    <div class="page-head"><div><h1>Good ${TODAY.getHours() < 12 ? "morning" : "afternoon"}, ${esc(r.name.split(" ")[0])}</h1><p>${fmtDate(TODAY.toISOString().slice(0, 10))} · ${esc(r.desk)}</p></div></div>
+    <div class="stats">
+      <button class="stat" data-go="candidates"><b>${cs.length}</b><span>Candidates on your desk</span></button>
+      <button class="stat" data-q="Candidates not contacted in 2 months"><b style="color:var(--warn)">${follow.length}</b><span>Need a follow-up (60+ days)</span></button>
+      <button class="stat" data-go="jobs"><b>${openJobs.length}</b><span>Open jobs</span></button>
+      <button class="stat" data-go="compliance"><b style="color:${consentIssues.length ? "var(--bad)" : "var(--good)"}">${consentIssues.length}</b><span>Consent or retention to fix</span></button>
+    </div>
+    <section class="ask">
+      <div><h2>Ask your talent pool</h2><p class="muted" style="font-size:.88rem">Type the way you would brief a colleague: skills, city, salary, licence, language, work mode, last contact.</p></div>
+      <form id="ask-form"><input class="input" id="ask-q" value="${esc(ui.query)}" placeholder="e.g. Structural engineers with P.Eng in the GTA under 130k" aria-label="Describe the candidate you are looking for"><button class="btn primary">Search</button></form>
+      ${ui.filters ? `<div class="understood"><span class="eyebrow">Understood as</span>${ui.filters.labels.length ? ui.filters.labels.map(([k, l]) => `<span class="chip hit">${esc(l)}<button data-drop="${esc(k)}" aria-label="Remove ${esc(l)}">×</button></span>`).join("") : `<span class="muted">No filters recognised; showing everyone.</span>`}</div>`
+        : `<div class="chips">${examples.map(e => `<button class="chip outline" data-q="${esc(e)}">${esc(e)}</button>`).join("")}</div>`}
+      <p class="demo-note">Demo: the query is read by a rule-based parser in your browser to simulate the AI assistant. Results only include candidates you own.</p>
+    </section>
+    ${results}
+    ${!ui.filters ? `<div class="two">
+      <section class="panel"><div class="panel-head"><h2>Follow-up queue</h2><span class="muted" style="font-size:.82rem">Longest silence first</span></div>
+        <div class="list">${follow.length ? follow.slice(0, 5).map(c => candRow(c)).join("") : `<div class="empty">Everyone has heard from you in the last 60 days.</div>`}</div></section>
+      <section class="panel"><div class="panel-head"><h2>Open jobs</h2></div>
+        <div class="list">${openJobs.map(j => { const top = mine(DB.candidates).map(c => matchScore(c, j).total).sort((a, b) => b - a)[0] || 0;
+          return `<button class="card" data-job="${j.id}"><span class="row"><strong>${esc(j.title)}</strong></span><span class="muted" style="font-size:.82rem">${esc(client(j.client).name)} · ${esc(j.city)}, ${j.prov} · <span class="num">${fmtPay(j.salary)}</span></span><span class="row" style="font-size:.8rem"><span class="bar"><i style="width:${top}%"></i></span>Best match ${top}</span></button>`; }).join("")}</div></section>
+    </div>` : ""}`;
+}
+
+function viewCandidates() {
+  let cs = mine(DB.candidates);
+  if (ui.candFilter === "follow") cs = cs.filter(c => recency(c).days >= 60);
+  else if (ui.candFilter !== "all") cs = cs.filter(c => c.status === ui.candFilter);
+  if (ui.candText) { const q = norm(ui.candText); cs = cs.filter(c => norm([c.name, c.title, c.city, ...c.skills.map(s => s.n)].join(" ")).includes(q)); }
+  cs.sort((a, b) => recency(a).days - recency(b).days);
+  const tabs = [["all", "All"], ["Active", "Active"], ["Passive", "Passive"], ["follow", "Follow-up due"]];
+  return `<div class="page-head"><div><h1>My candidates</h1><p>Sorted by most recent contact. Only you can see and edit these records.</p></div><span class="spacer"></span><button class="btn primary" data-act="upload">${icons.upload}Upload résumé</button></div>
+    <div class="row">
+      ${tabs.map(([k, l]) => `<button class="btn sm ${ui.candFilter === k ? "primary" : ""}" data-cf="${k}">${l}</button>`).join("")}
+      <span class="spacer"></span>
+      <input class="input" id="cand-filter" style="max-width:260px" placeholder="Filter by name, skill or city" value="${esc(ui.candText)}" aria-label="Filter candidates">
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Candidate</th><th>Location</th><th>Last contact</th><th>Expected pay</th><th>Work mode</th><th>Top skills</th><th>Privacy</th></tr></thead>
+      <tbody>${cs.map(c => { const r = recency(c), k = consentState(c); return `<tr class="click" data-open="${c.id}">
+        <td><strong>${esc(c.name)}</strong><br><span class="muted">${esc(c.title)}</span></td>
+        <td>${esc(c.city)}, ${c.prov}</td>
+        <td><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="dot ${r.cls}"></span><span style="white-space:nowrap">${r.label}</span></span></td>
+        <td class="num" style="white-space:nowrap">${fmtPay(c.salary)}</td>
+        <td>${c.modes.join(" / ")}${c.relocate ? "<br><span class='muted'>Will relocate</span>" : ""}</td>
+        <td><span class="chips">${c.skills.slice(0, 3).map(s => `<span class="chip">${esc(s.n)}</span>`).join("")}</span></td>
+        <td><span class="chip ${k.cls}">${k.label}</span></td></tr>`; }).join("") || `<tr><td colspan="7"><div class="empty">No candidates match this filter.</div></td></tr>`}</tbody>
+    </table></div>`;
+}
+
+function aiSummary(c) {
+  const r = recency(c), lc = c.comms.slice().sort((a, b) => b.d.localeCompare(a.d))[0];
+  const best = mine(DB.jobs).filter(j => j.status === "Open").map(j => ({ j, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total)[0];
+  const first = c.name.split(" ")[0];
+  const desig = c.designations.filter(d => !c.title.includes(d.split(" ")[0]));
+  return `${esc(first)} is ${/^[aeiou]/i.test(c.title) ? "an" : "a"} ${esc(c.title)}${desig.length ? ` (${esc(desig.join(", "))})` : ""} in ${esc(c.city)} with ${c.years} years' experience, strongest in ${esc(c.skills.slice(0, 3).map(s => s.n).join(", "))}. `
+    + `Expects ${fmtPay(c.salary)}${c.salary.type === "annual" ? " base" : ""}, wants ${esc(c.modes.join(" or ").toLowerCase())} work${c.relocate ? " and would relocate" : ""}. `
+    + (c.pains[0] ? `Main reason to move: ${esc(c.pains[0].charAt(0).toLowerCase() + c.pains[0].slice(1))}. ` : "")
+    + (lc ? `Last contact ${r.label.toLowerCase()} by ${lc.type.toLowerCase()}: ${esc(lc.s)} ` : "")
+    + (best && best.m.total >= 50 ? `Best open match: <strong>${esc(best.j.title)}</strong> at ${esc(client(best.j.client).name)} (${best.m.total}/100).` : "No strong match among your open jobs.");
+}
+
+function viewCandidate() {
+  const c = cand(ui.id);
+  if (!c || c.owner !== me) return `<div class="empty">This candidate belongs to another recruiter's desk.</div>`;
+  const r = recency(c), k = consentState(c);
+  const matches = mine(DB.jobs).filter(j => j.status === "Open").map(j => ({ j, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total);
+  const comms = c.comms.slice().sort((a, b) => b.d.localeCompare(a.d));
+  const memory = c.memory.slice().sort((a, b) => b.d.localeCompare(a.d));
+  const maxY = Math.max(...c.skills.map(s => s.y), 1);
+  return `
+    <div><button class="btn ghost sm" data-go="candidates">← My candidates</button></div>
+    <div class="profile-head">
+      <span class="avatar lg">${initials(c.name)}</span>
+      <div style="min-width:0"><h1>${esc(c.name)}</h1><p class="muted">${esc(c.title)} · ${esc(c.city)}, ${c.prov} · ${c.years} years</p>
+        <div class="row" style="margin-top:6px"><span class="chip ${r.cls}"><span class="dot ${r.cls}"></span>Last contact ${r.label.toLowerCase()}</span><span class="chip">${esc(c.status)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}<span class="chip ${k.cls}">${k.label}</span></div></div>
+      <div class="row"><select class="input" id="status-sel" style="width:auto" aria-label="Candidate status">${["Active", "Passive", "Placed", "Do not contact"].map(s => `<option ${s === c.status ? "selected" : ""}>${s}</option>`).join("")}</select><button class="btn primary" data-act="log">Log contact</button></div>
+    </div>
+    <div class="summary"><span class="eyebrow">AI summary</span><p>${aiSummary(c)}</p></div>
+    <div class="two">
+      <div class="stack">
+        <section class="panel"><div class="panel-head"><h2>Memory cards</h2><span class="muted" style="font-size:.82rem">Things to remember before the next call</span><span class="spacer"></span><button class="btn sm" data-act="add-memo">Add card</button></div>
+          ${ui.modal === "memo" ? `<form id="memo-form" class="stack" style="margin-bottom:12px"><div class="form-grid"><div class="field"><label for="memo-tag">Type</label><select class="input" id="memo-tag">${["Preference", "Compensation", "Pain point", "Work authorization", "Client feedback", "Personal"].map(t => `<option>${t}</option>`).join("")}</select></div><div class="field full"><label for="memo-text">Note</label><textarea class="input" id="memo-text" required placeholder="e.g. Wants to avoid downtown commute"></textarea></div></div><div class="row"><button class="btn primary sm">Save card</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button></div><p class="demo-note">Do not record age, health, family status or other protected grounds unless the candidate offered it and it matters to the job.</p></form>` : ""}
+          <div class="memory-grid">${memory.map(m => `<div class="memo"><div class="memo-top"><span class="chip">${esc(m.tag)}</span><span>${fmtDate(m.d)}</span></div><p>${esc(m.t)}</p></div>`).join("") || `<div class="empty">No memory cards yet.</div>`}</div>
+        </section>
+        <div class="two" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+          <section class="panel"><h2>Pain points</h2><ul class="pain">${c.pains.map(p => `<li>${esc(p)}</li>`).join("") || "<li>None recorded</li>"}</ul></section>
+          <section class="panel"><h2>What would make them move</h2><ul class="pain moti">${c.motives.map(p => `<li>${esc(p)}</li>`).join("") || "<li>None recorded</li>"}</ul></section>
+        </div>
+        <section class="panel"><div class="panel-head"><h2>Communication history</h2><span class="spacer"></span><button class="btn sm" data-act="log">Log contact</button></div>
+          ${ui.modal === "log" ? `<form id="log-form" class="stack" style="margin-bottom:14px"><div class="form-grid"><div class="field"><label for="log-type">Channel</label><select class="input" id="log-type">${["Call", "Email", "Meeting", "LinkedIn", "SMS"].map(t => `<option>${t}</option>`).join("")}</select></div><div class="field"><label for="log-date">Date</label><input class="input" type="date" id="log-date" value="${TODAY.toISOString().slice(0, 10)}"></div><div class="field full"><label for="log-text">Summary</label><textarea class="input" id="log-text" required placeholder="What did you discuss? Any change in salary, availability or interest?"></textarea></div></div><label class="row" style="font-size:.85rem"><input type="checkbox" id="log-memo"> Also save as a memory card</label><div class="row"><button class="btn primary sm">Save</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button></div>${c.consent?.casl !== "Express" ? `<p class="notice warn">CASL: only implied consent for electronic messages. Ask for express consent before sending job alerts by email or SMS.</p>` : ""}</form>` : ""}
+          <div class="timeline">${comms.map(x => `<div class="tl"><span class="tl-date">${fmtDate(x.d)}</span><span class="tl-line"><i></i></span><div class="tl-body"><b>${esc(x.type)}</b> <span class="muted" style="font-size:.78rem">· ${daysSince(x.d)}d ago</span><p>${esc(x.s)}</p></div></div>`).join("") || `<div class="empty">No contact logged yet.</div>`}</div>
+        </section>
+      </div>
+      <div class="stack">
+        <section class="panel"><h2>Key facts</h2><dl class="kv">
+          <dt>Expected pay</dt><dd class="num">${fmtPay(c.salary)}${c.salary.type === "annual" ? " CAD / yr" : " CAD"}</dd>
+          <dt>Location</dt><dd>${esc(c.city)}, ${c.prov}</dd>
+          <dt>Work mode</dt><dd>${c.modes.join(" / ")}</dd>
+          <dt>Relocation</dt><dd>${c.relocate ? "Open to relocating" : "Not open"}</dd>
+          <dt>Notice period</dt><dd>${esc(c.notice)}</dd>
+          <dt>Work authorization</dt><dd>${esc(c.auth)}${/lmia/i.test(c.auth) ? ` <span class="chip warn">LMIA</span>` : ""}</dd>
+          <dt>Languages</dt><dd>${c.langs.join(", ")}</dd>
+          <dt>Contact</dt><dd>${esc(c.email)}<br><span class="num">${esc(c.phone)}</span></dd>
+          <dt>Résumé</dt><dd>${esc(c.resume || "None on file")}</dd>
+        </dl></section>
+        <section class="panel"><h2>Skills</h2><div class="skill-list">${c.skills.map(s => `<div class="skill"><span>${esc(s.n)}</span><span class="bar"><i style="width:${Math.round(s.y / maxY * 100)}%"></i></span><span class="num muted">${s.y}y</span></div>`).join("")}</div></section>
+        <section class="panel"><h2>Matching open jobs</h2><div class="list">${matches.map(({ j, m }) => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1;min-width:0">${esc(j.title)}</strong><span class="score">${m.total}</span></span><span class="muted" style="font-size:.8rem">${esc(client(j.client).name)} · ${esc(j.city)}</span><span class="bar" style="width:100%"><i style="width:${m.total}%"></i></span>${m.gaps.length ? `<span class="why">${esc(m.gaps.slice(0, 2).join(" · "))}</span>` : `<span class="why" style="color:var(--good)">No gaps found</span>`}</button>`).join("") || `<div class="empty">No open jobs on your desk.</div>`}</div></section>
+        <section class="panel"><h2>Privacy &amp; consent</h2><dl class="kv">
+          <dt>Consent</dt><dd>${c.consent && c.consent.method !== "Pending" ? `${esc(c.consent.method)}, ${fmtDate(c.consent.date)}` : `<span class="chip bad">Pending</span>`}</dd>
+          <dt>CASL (email/SMS)</dt><dd>${esc(c.consent?.casl || "None")}${c.consent?.casl === "Implied" ? ` <span class="chip warn">expires ${fmtDate(addDays(c.consent.date, 730))}</span>` : ""}</dd>
+          <dt>Keep record until</dt><dd>${c.consent ? fmtDate(c.consent.retainUntil) : "—"} <span class="chip ${k.cls}">${k.label}</span></dd>
+        </dl><div class="row" style="margin-top:12px"><button class="btn sm" data-act="renew">Record renewed consent</button><button class="btn sm ghost" data-act="export">Access request export</button></div></section>
+      </div>
+    </div>`;
+}
+
+function viewJobs() {
+  const js = mine(DB.jobs);
+  return `<div class="page-head"><div><h1>My jobs</h1><p>Open roles you are recruiting for, with the best candidates already on your desk.</p></div></div>
+    <div class="cards">${js.map(j => { const ms = mine(DB.candidates).map(c => matchScore(c, j).total).sort((a, b) => b - a); const issues = postingChecks(j).filter(x => x[0] === "bad").length;
+      return `<button class="card" data-job="${j.id}">
+        <span class="row"><span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span><span class="chip">${j.type}</span>${issues ? `<span class="chip bad">${issues} posting issue${issues > 1 ? "s" : ""}</span>` : `<span class="chip good">Posting compliant</span>`}</span>
+        <strong style="font-size:1rem">${esc(j.title)}</strong>
+        <span class="muted" style="font-size:.84rem">${esc(client(j.client).name)}<br>${esc(j.city)}, ${j.prov} · ${j.modes.join(" / ")} · <span class="num">${fmtPay(j.salary)}</span></span>
+        <span class="chips">${j.must.map(s => `<span class="chip">${esc(s)}</span>`).join("")}</span>
+        <span class="row" style="font-size:.8rem"><span class="bar"><i style="width:${ms[0] || 0}%"></i></span>${ms.filter(x => x >= 60).length} strong matches · ${j.pipeline.length} in pipeline</span>
+      </button>`; }).join("")}</div>`;
+}
+
+const STAGES = ["Sourced", "Contacted", "Submitted", "Interview", "Offer", "Placed", "Not a fit"];
+function viewJob() {
+  const j = job(ui.id);
+  if (!j || j.owner !== me) return `<div class="empty">This job belongs to another recruiter's desk.</div>`;
+  const k = client(j.client);
+  const scored = mine(DB.candidates).filter(c => c.status !== "Do not contact").map(c => ({ c, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total);
+  const ranked = scored.filter(x => x.m.mustHit.length), hidden = scored.length - ranked.length;
+  const inPipe = new Set(j.pipeline.map(p => p.c));
+  return `<div><button class="btn ghost sm" data-go="jobs">← My jobs</button></div>
+    <div class="page-head"><div><h1>${esc(j.title)}</h1><p>${esc(k.name)} · ${esc(j.city)}, ${j.prov} · ${j.modes.join(" / ")} · ${j.type} · <span class="num">${fmtPay(j.salary)}</span> · opened ${daysSince(j.opened)} days ago</p></div></div>
+    <div class="two">
+      <div class="stack">
+        <section class="panel"><div class="panel-head"><h2>Best candidates on your desk</h2><span class="muted" style="font-size:.82rem">Score out of 100: skills 55, location 20, salary 15, credentials 10</span></div>
+          <div class="list">${ranked.map(({ c, m }) => `<div class="cand" style="cursor:default">
+            <span class="score" style="width:42px;text-align:center">${m.total}</span>
+            <span class="cand-main">
+              <span class="row"><button class="btn ghost sm" style="padding:0;font-weight:700;font-size:.98rem;color:var(--fg)" data-open="${c.id}">${esc(c.name)}</button><span class="muted" style="font-size:.84rem">${esc(c.title)} · ${esc(c.city)} · <span class="num">${fmtPay(c.salary)}</span></span></span>
+              <span class="chips">${j.must.map(s => `<span class="chip ${m.mustHit.includes(s) ? "hit" : "bad"}">${esc(s)}</span>`).join("")}${m.niceHit.map(s => `<span class="chip hit">${esc(s)}</span>`).join("")}</span>
+              <span class="breakdown">${m.parts.map(([l, v, max]) => `<span class="muted">${l}</span><span class="bar"><i style="width:${v / max * 100}%"></i></span><span class="num">${v}/${max}</span>`).join("")}</span>
+              ${m.gaps.length ? `<span class="why">Gaps: ${esc(m.gaps.join(" · "))}</span>` : `<span class="why" style="color:var(--good)">No gaps found</span>`}
+            </span>
+            <span class="cand-side">${inPipe.has(c.id) ? `<span class="chip good">In pipeline</span>` : `<button class="btn sm" data-shortlist="${c.id}">Shortlist</button>`}<span class="row" style="gap:6px"><span class="dot ${recency(c).cls}"></span>${recency(c).label}</span></span>
+          </div>`).join("") || `<div class="empty">Nobody on your desk has the must-have skills yet. Upload résumés or widen the search.</div>`}</div>
+          ${hidden ? `<p class="muted" style="font-size:.8rem;margin-top:10px">${hidden} other candidate${hidden === 1 ? " has" : "s have"} none of the must-have skills and ${hidden === 1 ? "is" : "are"} not shown.</p>` : ""}</section>
+      </div>
+      <div class="stack">
+        <section class="panel"><h2>Pipeline</h2>${j.pipeline.length ? `<div class="list">${j.pipeline.map((p, i) => { const c = cand(p.c); return `<div class="row"><button class="btn ghost sm" style="flex:1;justify-content:flex-start;color:var(--fg)" data-open="${c.id}">${esc(c.name)}</button><select class="input" style="width:auto" data-stage="${i}" aria-label="Stage for ${esc(c.name)}">${STAGES.map(s => `<option ${s === p.stage ? "selected" : ""}>${s}</option>`).join("")}</select></div>`; }).join("")}</div>` : `<div class="empty">Shortlist candidates from the ranking to start the pipeline.</div>`}</section>
+        <section class="panel"><h2>What ${esc(k.name)} cares about</h2><ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>${k.avoid.length ? `<h3 style="margin:12px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}<p class="muted" style="font-size:.8rem;margin-top:10px">Fee ${esc(k.fee)} · guarantee ${esc(k.guarantee)}</p></section>
+        <section class="panel"><h2>Job posting check</h2><p class="muted" style="font-size:.8rem;margin-bottom:6px">Rules for ${j.prov} postings</p>${postingChecks(j).map(([s, t]) => `<div class="check"><span class="ic ${s}">${s === "good" ? "✓" : s === "warn" ? "!" : "✕"}</span><span>${esc(t)}</span></div>`).join("")}
+          <dl class="kv" style="margin-top:10px"><dt>Posting text</dt><dd>${esc(j.posting.text)}</dd><dt>AI statement</dt><dd>${esc(j.posting.ai || "None")}</dd></dl></section>
+      </div>
+    </div>`;
+}
+
+function viewClients() {
+  return `<div class="page-head"><div><h1>My clients</h1><p>Hiring preferences, contacts and terms for each client you manage.</p></div></div>
+    <div class="cards">${mine(DB.clients).map(k => { const open = DB.jobs.filter(j => j.client === k.id && j.status === "Open"); const d = daysSince(k.lastContact);
+      return `<button class="card" data-client="${k.id}"><strong style="font-size:1rem">${esc(k.name)}</strong><span class="muted" style="font-size:.84rem">${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size} employees</span>
+        <ul class="pain moti">${k.prefs.slice(0, 2).map(p => `<li>${esc(p)}</li>`).join("")}</ul>
+        <span class="row" style="font-size:.8rem"><span class="chip">${open.length} open job${open.length === 1 ? "" : "s"}</span><span class="row" style="gap:6px"><span class="dot ${d <= 30 ? "good" : "warn"}"></span>Last contact ${d} days ago</span></span></button>`; }).join("")}</div>`;
+}
+function viewClient() {
+  const k = client(ui.id);
+  if (!k || k.owner !== me) return `<div class="empty">This client belongs to another recruiter's desk.</div>`;
+  const js = DB.jobs.filter(j => j.client === k.id);
+  return `<div><button class="btn ghost sm" data-go="clients">← My clients</button></div>
+    <div class="page-head"><div><h1>${esc(k.name)}</h1><p>${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size} employees</p></div></div>
+    <div class="two">
+      <div class="stack">
+        <section class="panel"><div class="panel-head"><h2>Hiring preferences</h2></div><ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
+          ${k.avoid.length ? `<h3 style="margin:14px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
+          <form id="pref-form" class="row" style="margin-top:14px"><input class="input" id="pref-text" style="flex:1;min-width:180px" placeholder="Add a preference, e.g. Prefers candidates within 45 min of office" required><button class="btn sm">Add</button></form>
+          <p class="demo-note" style="margin-top:8px">Keep preferences job-related. Requests based on age, gender, origin, religion, family status or disability breach human rights codes and should be declined.</p></section>
+        <section class="panel"><h2>Jobs</h2><div class="list">${js.map(j => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1">${esc(j.title)}</strong><span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span></span><span class="muted" style="font-size:.82rem">${esc(j.city)} · <span class="num">${fmtPay(j.salary)}</span> · ${j.pipeline.length} in pipeline</span></button>`).join("")}</div></section>
+      </div>
+      <div class="stack">
+        <section class="panel"><h2>Contacts</h2>${k.contacts.map(p => `<div class="me" style="margin-bottom:8px"><span class="avatar">${initials(p.n)}</span><div><strong>${esc(p.n)}</strong><span>${esc(p.r)} · ${esc(p.e)}</span></div></div>`).join("")}</section>
+        <section class="panel"><h2>Terms</h2><dl class="kv"><dt>Fee</dt><dd>${esc(k.fee)}</dd><dt>Guarantee</dt><dd>${esc(k.guarantee)}</dd><dt>Last contact</dt><dd>${fmtDate(k.lastContact)}</dd></dl></section>
+      </div>
+    </div>`;
+}
+
+function viewCompliance() {
+  const cs = mine(DB.candidates), js = mine(DB.jobs), r = recruiter(me);
+  const consentRows = cs.map(c => ({ c, k: consentState(c) })).filter(x => x.k.cls !== "good");
+  const implied = cs.filter(c => c.consent?.casl === "Implied");
+  const jobRows = js.map(j => ({ j, bad: postingChecks(j).filter(x => x[0] !== "good") })).filter(x => x.bad.length);
+  const rules = [
+    ["Privacy: PIPEDA, Québec Law 25, Alberta & BC PIPA", "Get meaningful consent before collecting a résumé, use it only for recruiting, keep it no longer than needed, and give candidates access on request. TalentBook records consent method, date and a retention date for every candidate."],
+    ["Anti-spam: CASL", "Job alerts by email or SMS need express consent, or implied consent that lapses after 2 years. Each candidate shows their CASL status."],
+    ["Ontario job postings (ESA, from 1 Jan 2026)", "Employers with 25+ staff must show a pay range no wider than $50k (for jobs up to $200k), say whether AI screens applicants, not require Canadian experience, say whether the vacancy exists, and reply to interviewed candidates within 45 days."],
+    ["Pay transparency in other provinces", "BC (since Nov 2023) and PEI require a pay range in postings. TalentBook checks each job against its province."],
+    ["Ontario recruiter licensing", "Since 1 July 2024 recruiters and temp agencies placing workers in Ontario need a licence, and clients may not knowingly use unlicensed recruiters."],
+    ["Québec: French language", "Postings and work documents must be available in French under the Charter of the French Language (Bill 96)."],
+    ["Human rights", "Do not record or screen on protected grounds (age, race, origin, religion, sex, family status, disability). Résumé parsing ignores date of birth, photos and marital status."],
+    ["Professional titles", "Only licensed members can use “engineer” titles: PEO (ON), OIQ (QC), APEGA (AB), EGBC (BC). Candidates' designations are tracked separately from job titles."],
+    ["Accessibility: AODA", "Ontario employers must offer accommodation during recruitment. Add accommodation requests as a memory card."]
+  ];
+  return `<div class="page-head"><div><h1>Compliance</h1><p>What needs fixing on your desk, checked against Canadian hiring and privacy rules.</p></div></div>
+    <div class="stats">
+      <div class="stat"><b style="color:${consentRows.length ? "var(--bad)" : "var(--good)"}">${consentRows.length}</b><span>Consent or retention issues</span></div>
+      <div class="stat"><b style="color:${implied.length ? "var(--warn)" : "var(--good)"}">${implied.length}</b><span>Implied CASL consent only</span></div>
+      <div class="stat"><b style="color:${jobRows.length ? "var(--bad)" : "var(--good)"}">${jobRows.length}</b><span>Job postings to fix</span></div>
+      <div class="stat"><b style="font-size:1rem;padding-top:8px">${esc(r.licence)}</b><span>Your licence on file</span></div>
+    </div>
+    <div class="two">
+      <div class="stack">
+        <section class="panel"><h2>Candidates to fix</h2>${consentRows.length || implied.length ? `<div class="table-wrap"><table><thead><tr><th>Candidate</th><th>Issue</th><th>Action</th></tr></thead><tbody>
+          ${consentRows.map(({ c, k }) => `<tr class="click" data-open="${c.id}"><td>${esc(c.name)}</td><td><span class="chip ${k.cls}">${k.label}</span></td><td>Reconfirm consent or delete the record</td></tr>`).join("")}
+          ${implied.filter(c => !consentRows.some(x => x.c === c)).map(c => `<tr class="click" data-open="${c.id}"><td>${esc(c.name)}</td><td><span class="chip warn">CASL implied, expires ${fmtDate(addDays(c.consent.date, 730))}</span></td><td>Ask for express consent before email alerts</td></tr>`).join("")}
+        </tbody></table></div>` : `<div class="empty">Every candidate has current consent.</div>`}</section>
+        <section class="panel"><h2>Job postings to fix</h2>${jobRows.length ? jobRows.map(({ j, bad }) => `<button class="card" data-job="${j.id}" style="margin-bottom:8px;width:100%"><strong>${esc(j.title)} · ${j.prov}</strong>${bad.map(([s, t]) => `<span class="row" style="font-size:.84rem;flex-wrap:nowrap;align-items:flex-start"><span class="ic ${s}" style="width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:.7rem;flex:none">${s === "warn" ? "!" : "✕"}</span>${esc(t)}</span>`).join("")}</button>`).join("") : `<div class="empty">All your postings pass.</div>`}</section>
+      </div>
+      <section class="panel"><h2>Rules this demo follows</h2>${rules.map(([h, t]) => `<div class="check" style="grid-template-columns:1fr"><span><strong>${esc(h)}</strong><br><span class="muted">${esc(t)}</span></span></div>`).join("")}
+        <p class="demo-note" style="margin-top:10px">Summary for product design, not legal advice. Confirm with Canadian employment counsel before launch.</p></section>
+    </div>`;
+}
+
+/* ---------------- upload modal ---------------- */
+const SAMPLE_CV = `Nadia Bouchard
+Civil Engineer, P.Eng
+Toronto, ON · nadia.bouchard@mail.example · (416) 555-0166
+
+SUMMARY
+Municipal and transportation civil engineer with 7 years of experience designing roads, watermains and stormwater systems for Ontario municipalities.
+
+SKILLS
+Civil 3D, AutoCAD, Stormwater management, MTO standards, Contract administration (CCDC), Primavera P6
+
+EXPERIENCE
+Project Engineer, Metro Infrastructure Consultants, Toronto (2021–present)
+Design Engineer, Halton Engineering Ltd., Oakville (2018–2021)
+
+EDUCATION
+B.A.Sc. Civil Engineering, University of Toronto
+Licensed P.Eng (PEO). Bilingual English / French.`;
+
+function extractFromText(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const email = (text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/) || [""])[0];
+  const phone = (text.match(/(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/) || [""])[0];
+  const name = lines.find(l => /^[A-ZÀ-Ý][a-zà-ÿ'’-]+(?:\s+[A-ZÀ-Ý][a-zà-ÿ'’-]+){1,3}$/.test(l)) || "";
+  const title = lines.find(l => /(engineer|manager|developer|designer|superintendent|consultant|analyst|technologist|architect|ingénieur)/i.test(l) && l.length < 70) || "";
+  const t = " " + norm(text) + " ";
+  const cityKey = Object.keys(CITIES).map(k => [k, t.indexOf(k)]).filter(x => x[1] >= 0).sort((a, b) => a[1] - b[1] || b[0].length - a[0].length)[0]?.[0];
+  const skills = knownSkills().filter(s => t.includes(norm(s)));
+  Object.entries(SKILL_ALIASES).forEach(([a, s]) => { if (new RegExp("\\b" + a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b").test(t) && !skills.includes(s)) skills.push(s); });
+  const designations = [];
+  if (/p\.?\s?eng/i.test(text)) designations.push("P.Eng"); if (/\bEIT\b/.test(text)) designations.push("EIT"); if (/\bPMP\b/.test(text)) designations.push("PMP"); if (/\bOIQ\b|\bing\.\s/.test(text)) designations.push("ing. (OIQ)");
+  const yrs = (text.match(/(\d{1,2})\+?\s+years/i) || [])[1];
+  const langs = ["English"]; if (/french|français|bilingual/i.test(text)) langs.push("French");
+  const protectedHits = ["date of birth", "dob", "marital status", "married", "religion", "nationality", "age:"].filter(p => t.includes(p));
+  return { name, title: title.replace(/,\s*(p\.?eng|eit|pmp).*$/i, ""), email, phone, city: cityKey ? (CITY_LABEL[cityKey] || cityKey.replace(/\b\w/g, c => c.toUpperCase())) : "", prov: cityKey ? CITIES[cityKey] : "ON", skills, designations, years: yrs ? +yrs : "", langs, protectedHits };
+}
+function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Could not load " + src)); document.head.appendChild(s); }); }
+async function readFile(file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  if (ext === "txt" || ext === "md") return file.text();
+  if (ext === "pdf") {
+    if (!window.pdfjsLib) { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"); window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }
+    const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    let out = "";
+    for (let p = 1; p <= Math.min(pdf.numPages, 6); p++) {
+      const tc = await (await pdf.getPage(p)).getTextContent();
+      let lastY = null;
+      tc.items.forEach(it => { const y = it.transform[5]; out += (lastY !== null && Math.abs(y - lastY) > 4 ? "\n" : " ") + it.str; lastY = y; });
+      out += "\n";
+    }
+    return out;
+  }
+  if (ext === "docx") {
+    if (!window.mammoth) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js");
+    return (await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
+  }
+  throw new Error("Use a PDF, Word (.docx) or text file.");
+}
+function findDuplicate(u) {
+  const e = norm(u.email), n = norm(u.name);
+  return DB.candidates.find(c => (e && norm(c.email) === e) || (n && norm(c.name) === n));
+}
+function viewUpload() {
+  const u = ui.upload;
+  const dup = u?.data ? findDuplicate(u.data) : null;
+  const d = u?.data || {};
+  const provs = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"];
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="up-title">
+    <div class="panel-head"><h2 id="up-title">Add a candidate from a résumé</h2><span class="spacer"></span><button class="btn ghost sm" data-act="close">Close</button></div>
+    ${!u?.data ? `
+      <label class="drop" id="drop" for="file-in">
+        ${icons.upload.replace('width="16" height="16"', 'width="28" height="28"')}
+        <strong>Drop a résumé here or choose a file</strong>
+        <span class="muted" style="font-size:.84rem">PDF, Word (.docx) or text. The file is read in your browser and never uploaded in this demo.</span>
+        <input type="file" id="file-in" accept=".pdf,.docx,.txt,.md" hidden>
+        <span class="btn sm">Choose file</span>
+      </label>
+      ${u?.busy ? `<p class="muted">Reading ${esc(u.file)}…</p>` : ""}
+      ${u?.err ? `<p class="notice bad">${esc(u.err)}</p>` : ""}
+      <div class="row"><span class="muted" style="font-size:.84rem">No résumé handy?</span><button class="btn sm" data-act="sample">Use a sample résumé</button></div>`
+    : `
+      <p class="muted" style="font-size:.85rem">Extracted from <strong>${esc(u.file)}</strong>. Check each field before saving.</p>
+      ${dup ? (dup.owner === me ? `<div class="notice warn">${esc(dup.name)} is already on your desk. Saving will create a second record. <button class="btn sm" data-open="${dup.id}">Open existing</button></div>` : `<div class="notice warn">This person is already on ${esc(recruiter(dup.owner).name)}'s desk. Talk to them before you contact the candidate, so the agency does not approach them twice.</div>`) : ""}
+      ${d.protectedHits?.length ? `<div class="notice info">The résumé mentions ${esc(d.protectedHits.join(", "))}. TalentBook does not store these protected-ground details.</div>` : ""}
+      <form id="cand-form" class="stack">
+        <div class="form-grid">
+          <div class="field"><label for="f-name">Full name</label><input class="input" id="f-name" required value="${esc(d.name)}"></div>
+          <div class="field"><label for="f-title">Current title</label><input class="input" id="f-title" required value="${esc(d.title)}"></div>
+          <div class="field"><label for="f-email">Email</label><input class="input" id="f-email" type="email" value="${esc(d.email)}"></div>
+          <div class="field"><label for="f-phone">Phone</label><input class="input" id="f-phone" value="${esc(d.phone)}"></div>
+          <div class="field"><label for="f-city">City</label><input class="input" id="f-city" value="${esc(d.city)}"></div>
+          <div class="field"><label for="f-prov">Province / territory</label><select class="input" id="f-prov">${provs.map(p => `<option ${p === d.prov ? "selected" : ""}>${p}</option>`).join("")}</select></div>
+          <div class="field full"><label for="f-skills">Skills (comma separated)</label><input class="input" id="f-skills" value="${esc(d.skills.join(", "))}"></div>
+          <div class="field"><label for="f-desig">Designations</label><input class="input" id="f-desig" value="${esc(d.designations.join(", "))}" placeholder="P.Eng, EIT, PMP"></div>
+          <div class="field"><label for="f-years">Years of experience</label><input class="input" id="f-years" type="number" min="0" value="${esc(d.years)}"></div>
+          <div class="field"><label for="f-smin">Expected pay from (CAD/yr)</label><input class="input" id="f-smin" type="number" step="1000" placeholder="95000"></div>
+          <div class="field"><label for="f-smax">Expected pay to (CAD/yr)</label><input class="input" id="f-smax" type="number" step="1000" placeholder="110000"></div>
+          <div class="field"><label for="f-mode">Work mode</label><select class="input" id="f-mode"><option>Hybrid</option><option>On-site</option><option>Remote</option></select></div>
+          <div class="field"><label for="f-auth">Work authorization</label><select class="input" id="f-auth"><option>Canadian citizen</option><option>Permanent resident</option><option>Open work permit</option><option>Employer-specific work permit (new employer needs LMIA)</option><option>Not yet confirmed</option></select></div>
+          <div class="field"><label for="f-langs">Languages</label><input class="input" id="f-langs" value="${esc(d.langs.join(", "))}"></div>
+          <div class="field"><label for="f-notice">Notice period</label><input class="input" id="f-notice" value="2 weeks"></div>
+          <div class="field full"><label for="f-pain">Pain points / reasons to move (one per line)</label><textarea class="input" id="f-pain" placeholder="e.g. Long commute"></textarea></div>
+        </div>
+        <fieldset class="panel" style="display:grid;gap:10px"><legend class="eyebrow" style="padding:0 6px">Consent (PIPEDA / Law 25 / CASL)</legend>
+          <div class="form-grid">
+            <div class="field"><label for="f-consent">How did the candidate consent?</label><select class="input" id="f-consent"><option>Verbal on call, confirmed by email</option><option>Email reply</option><option>Online form</option><option value="Pending">Not yet — send a consent request</option></select></div>
+            <div class="field"><label for="f-casl">Email &amp; SMS job alerts (CASL)</label><select class="input" id="f-casl"><option>Express</option><option>Implied</option><option>None</option></select></div>
+            <div class="field"><label for="f-retain">Keep record for</label><select class="input" id="f-retain"><option value="12">12 months</option><option value="24" selected>24 months</option><option value="36">36 months</option></select></div>
+          </div>
+          <label class="row" style="font-size:.85rem;align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="f-purpose" required style="margin-top:3px"> <span>The candidate was told we will use their information to match them with jobs and share it with a client only after they agree to each submission.</span></label>
+        </fieldset>
+        <div class="row"><button class="btn primary">Save candidate</button><button type="button" class="btn ghost" data-act="upload-reset">Choose another file</button></div>
+      </form>`}
+  </div></div>`;
+}
+
+/* ---------------- render & events ---------------- */
+function render() {
+  const app = document.getElementById("app");
+  const focusId = document.activeElement?.id, selStart = document.activeElement?.selectionStart;
+  if (!me) { app.innerHTML = viewLogin(); return; }
+  const views = { home: viewHome, candidates: viewCandidates, candidate: viewCandidate, jobs: viewJobs, job: viewJob, clients: viewClients, client: viewClient, compliance: viewCompliance };
+  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
+  if (focusId) { const el = document.getElementById(focusId); if (el && el.focus) { el.focus(); try { if (selStart != null) el.setSelectionRange(selStart, selStart); } catch (e) {} } }
+  const drop = document.getElementById("drop");
+  if (drop) {
+    ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+    ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+    drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+  }
+}
+async function handleFile(file) {
+  ui.upload = { file: file.name, busy: true }; render();
+  try {
+    const text = await readFile(file);
+    if (!text.trim()) throw new Error("No text found. Scanned PDFs need OCR, which this demo does not include.");
+    ui.upload = { file: file.name, data: extractFromText(text) };
+  } catch (e) { ui.upload = { file: file.name, err: e.message }; }
+  render();
+}
+function doSearch(q) { ui.query = q; ui.filters = q.trim() ? parseQuery(q) : null; ui.view = "home"; ui.modal = null; render(); }
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-pick],[data-go],[data-open],[data-job],[data-client],[data-act],[data-q],[data-drop],[data-cf],[data-shortlist]");
+  if (!t) return;
+  const d = t.dataset;
+  if (d.pick) { ui.loginPick = d.pick; ui.loginErr = null; render(); return; }
+  if (d.drop) { dropFilter(ui.filters, d.drop); render(); return; }
+  if (d.q) { doSearch(d.q); return; }
+  if (d.cf) { ui.candFilter = d.cf; render(); return; }
+  if (d.go) { if (d.go === "home") { ui.filters = null; ui.query = ""; } go(d.go); return; }
+  if (d.open) { e.stopPropagation(); go("candidate", d.open); return; }
+  if (d.job) { go("job", d.job); return; }
+  if (d.client) { go("client", d.client); return; }
+  if (d.shortlist) { job(ui.id).pipeline.push({ c: d.shortlist, stage: "Sourced" }); save(); toast("Added to pipeline"); return; }
+  const c = ui.view === "candidate" ? cand(ui.id) : null;
+  switch (d.act) {
+    case "logout": setMe(null); ui.view = "home"; ui.filters = null; ui.query = ""; render(); break;
+    case "upload": ui.modal = "upload"; ui.upload = null; render(); break;
+    case "upload-reset": ui.upload = null; render(); break;
+    case "sample": ui.upload = { file: "Nadia_Bouchard_CV.txt", data: extractFromText(SAMPLE_CV) }; render(); break;
+    case "close-scrim": if (e.target === t) { ui.modal = null; render(); } break;
+    case "close": ui.modal = null; render(); break;
+    case "clear-search": ui.filters = null; ui.query = ""; render(); break;
+    case "log": ui.modal = ui.modal === "log" ? null : "log"; render(); document.getElementById("log-text")?.focus(); break;
+    case "add-memo": ui.modal = ui.modal === "memo" ? null : "memo"; render(); document.getElementById("memo-text")?.focus(); break;
+    case "renew": c.consent = { date: ago(0), method: "Email reply", casl: "Express", retainUntil: addDays(ago(0), 730) }; save(); toast("Consent renewed for 24 months"); break;
+    case "export": {
+      const data = JSON.stringify(c, null, 2);
+      const done = () => toast("Candidate record copied to clipboard");
+      try { navigator.clipboard.writeText(data).then(done, () => toast("Copy blocked by the browser")); } catch (err) { toast("Copy blocked by the browser"); }
+      break;
+    }
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "file-in" && e.target.files[0]) handleFile(e.target.files[0]);
+  if (e.target.id === "status-sel") { cand(ui.id).status = e.target.value; save(); toast("Status updated"); }
+  if (e.target.dataset.stage != null) { job(ui.id).pipeline[+e.target.dataset.stage].stage = e.target.value; save(); toast("Stage updated"); }
+});
+document.addEventListener("input", e => { if (e.target.id === "cand-filter") { ui.candText = e.target.value; render(); } if (e.target.id === "login-email") ui.loginEmail = e.target.value; });
+document.addEventListener("submit", e => {
+  e.preventDefault();
+  const v = id => document.getElementById(id)?.value?.trim() ?? "";
+  switch (e.target.id) {
+    case "login-form": {
+      const r = DB.recruiters.find(x => x.email.toLowerCase() === v("login-email").toLowerCase());
+      if (!r || v("login-pw") !== "demo") { ui.loginErr = "Email or password is wrong. Pick a demo account above; the password is “demo”."; render(); return; }
+      setMe(r.id); ui.loginErr = null; ui.view = "home"; render(); break;
+    }
+    case "top-search": doSearch(v("top-q")); break;
+    case "ask-form": doSearch(v("ask-q")); break;
+    case "log-form": {
+      const c = cand(ui.id), s = v("log-text"), dt = v("log-date") || ago(0);
+      c.comms.push({ d: dt, type: v("log-type"), s });
+      if (document.getElementById("log-memo").checked) c.memory.push({ d: dt, tag: "Preference", t: s });
+      ui.modal = null; save(); toast("Contact logged"); break;
+    }
+    case "memo-form": { cand(ui.id).memory.push({ d: ago(0), tag: v("memo-tag"), t: v("memo-text") }); ui.modal = null; save(); toast("Memory card saved"); break; }
+    case "pref-form": { client(ui.id).prefs.push(v("pref-text")); save(); toast("Preference added"); break; }
+    case "cand-form": {
+      const smin = +v("f-smin") || 0, smax = +v("f-smax") || smin;
+      const c = { id: uid("c"), owner: me, name: v("f-name"), title: v("f-title"), city: v("f-city") || "Unknown", prov: v("f-prov"), email: v("f-email"), phone: v("f-phone"),
+        years: +v("f-years") || 0, designations: v("f-desig").split(",").map(s => s.trim()).filter(Boolean), langs: v("f-langs").split(",").map(s => s.trim()).filter(Boolean),
+        auth: v("f-auth"), status: "Active", salary: { min: smin, max: smax, type: "annual" }, modes: [v("f-mode")], relocate: false, notice: v("f-notice"),
+        skills: v("f-skills").split(",").map(s => s.trim()).filter(Boolean).map(n => ({ n, y: Math.max(1, Math.round((+v("f-years") || 2) * .7)) })),
+        pains: v("f-pain").split("\n").map(s => s.trim()).filter(Boolean), motives: [], memory: [],
+        comms: [{ d: ago(0), type: "Email", s: `Résumé received (${ui.upload.file}).` }],
+        consent: v("f-consent") === "Pending" ? { date: ago(0), method: "Pending", casl: v("f-casl"), retainUntil: addDays(ago(0), 30) } : { date: ago(0), method: v("f-consent"), casl: v("f-casl"), retainUntil: addDays(ago(0), Math.round(+v("f-retain") * 30.4)) },
+        resume: ui.upload.file };
+      DB.candidates.push(c); save(); ui.upload = null; ui.modal = null; ui.view = "candidate"; ui.id = c.id; toast("Candidate saved to your desk"); break;
+    }
+  }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && ui.modal) { ui.modal = null; render(); } });
+
+load();
+render();
+</script>
+</body>
+</html>
