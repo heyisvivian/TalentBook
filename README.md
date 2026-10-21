@@ -28,7 +28,9 @@ Every account uses the password `demo`.
 | Add hiring preferences to their clients (each shows who added it and when) | ✓ | ✓ | ✓ |
 | Create jobs, change job status, assign recruiters | ✓ | ✓ | |
 | Record placements | ✓ | ✓ | ✓ |
-| See fees, revenue and invoices | ✓ | ✓ | |
+| See company fees, margins, net and invoices (company version) | ✓ | ✓ | |
+| See their own commission (recruiter version) | ✓ | ✓ | ✓ |
+| Set commission rates and mark commission paid | ✓ | | |
 | Add users and change roles | ✓ | | |
 
 Recruiters see only their own candidates and the jobs assigned to them. Every contact log entry and memory card records who added it, and anyone who can open the candidate sees the candidate's contact details and all notes. Recruiters see a client's name, preferences and jobs, but not its contact people, fees or guarantee terms. Logging a contact can set the next follow-up date; due follow-ups top the home page queue. A client appears for a recruiter once they have a job with that client.
@@ -52,7 +54,10 @@ A placement is a candidate who accepted an offer and started with a client. It i
 - **Recording one:** moving a pipeline entry to Placed (or pressing Record placement on an Offer) opens the placement form: start date, accepted base salary, or pay rate, hours and weeks for a contract. Fee %, bill rate, guarantee and who gets credit come from the client's terms and only managers and admins see or change them. Saving marks the candidate Placed, the entry Placed and the job Filled, and logs it in the contact history.
 - **Fees:** permanent fee = fee % × accepted base salary. Contract margin = (bill rate − pay rate) × hours per week × weeks.
 - **Guarantee:** if the candidate leaves within the guarantee period, the placement is marked Fell off: replacing (fee kept, a replacement is owed) or refunded (fee removed from revenue).
-- **Placements page:** managers and admins see fees booked, collected and outstanding for the last 12 months, a chart of fees by start month, a breakdown by person, invoice status (Not invoiced, Invoiced, Paid; invoices over 30 days are Overdue) and a Needs attention list (guarantees ending within 14 days, starts coming up, invoices to send or chase). Recruiters see their own placements, start dates and guarantee check-ins, without fees.
+- **Two versions of the numbers.**
+  - *Company version* (admin and manager): what clients pay (fee or contract margin), collected and outstanding amounts, invoices, each person's commission and the net left for the company, a chart of fees by month, and a Needs attention list (guarantees ending, starts, invoices to send or chase, commission to pay).
+  - *Recruiter version*: only their own commission (fee × their commission rate): total for the last 12 months, paid out, payable now, and waiting for client payment or the end of the guarantee. Client fees, fee %, bill rates and invoices are not shown.
+- **Commission:** the admin sets each person's rate on the Team page. A placement keeps the rate it was recorded with. Commission is payable once the client has paid and the guarantee has ended; it goes on hold if the candidate leaves and a replacement is owed, and is cancelled if the fee is refunded. The admin marks commission as paid out.
 
 ## What the demo does
 
