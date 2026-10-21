@@ -41,12 +41,7 @@ A pipeline entry is one candidate in one job, with a stage (Sourced, Contacted, 
 
 ## Submitting a candidate to a client
 
-Moving a candidate to Submitted (or later), or pressing Submit, opens the submission form:
-
-1. **Consent for this submission.** Record how and when the candidate agreed to be put forward to this client for this role. The submission cannot go ahead until the recruiter confirms the candidate knows the client, the role and the pay range. Consent covers one client and one role.
-2. **Client copy.** A preview of exactly what the client receives. Phone, email, LinkedIn, street address and postal code are always removed, from the résumé and from the recruiter's summary. Options: initials instead of the full name, and whether to include expected pay. The text can be copied to paste into an email.
-
-The submission (date, sender, consent method and date, options) is saved on the pipeline entry and logged in the candidate's contact history. The sent profile can be reopened from the job, the pipeline board and the candidate profile. The Compliance page lists any candidate at Submitted or later with no consent on record.
+Pressing Submit on a pipeline entry (job page, candidate profile) opens a preview of the client copy, which is exactly what the client receives. Phone, email, LinkedIn, street address and postal code are always removed, from the résumé and from the recruiter's summary. The recruiter can show initials instead of the full name, choose whether to include expected pay, and copy the text into an email. "Mark as submitted" saves the submission on the pipeline entry, moves it to Submitted and logs it in the candidate's contact history. The sent profile can be reopened from the job page, the pipeline board and the candidate profile.
 
 ## What the demo does
 

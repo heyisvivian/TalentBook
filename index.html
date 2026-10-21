@@ -240,7 +240,6 @@ button.card:hover { border-color: var(--accent); }
 .modal.wide { max-width: 1080px; }
 .sub-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .sub-grid .resume-sheet { max-height: 70vh; font-size: .82rem; }
-.consent-box { border-color: var(--accent); }
 button.chip { border: 0; cursor: pointer; font: inherit; font-size: .78rem; }
 @media (max-width: 820px) { .sub-grid { grid-template-columns: 1fr; } }
 .drop { border: 2px dashed var(--line); border-radius: 12px; padding: 26px; text-align: center; display: grid; gap: 8px; justify-items: center; }
@@ -292,7 +291,7 @@ button.chip { border: 0; cursor: pointer; font: inherit; font-size: .78rem; }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v9";
+const STORE_KEY = "talentbook-demo-v10";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -576,8 +575,7 @@ function seed() {
   jobs.forEach(j => j.pipeline.forEach(p => {
     const sub = p.history.find(h => h.stage === "Submitted");
     if (!sub) return;
-    p.submission = { d: sub.d, by: p.by, nameMode: "full", includePay: true,
-      consent: { d: addDays(sub.d, -1), method: "Phone call", by: p.by, note: "Agreed after hearing the role, client name and pay range." } };
+    p.submission = { d: sub.d, by: p.by, nameMode: "full", includePay: true };
   }));
   const prefBy = { "k1": [["m1", 60], ["r1", 18], ["m1", 60]], "k3": [["m1", 45], ["r1", 6], ["m1", 45]], "k4": [["m1", 90], ["r1", 20], ["m1", 90]] };
   clients.forEach(k => { k.prefs = k.prefs.map((t, i) => { const [by, d] = (prefBy[k.id] || [])[i] || ["m1", 40 + i * 7]; return { t, by, d: ago(d) }; }); });
@@ -1092,8 +1090,8 @@ function viewCandidate() {
             <span class="muted" style="font-size:.8rem">${esc(client(j.client).name)} · ${daysSince(p.since)} days in stage</span>
             ${stageTrack(p.stage)}
             <span class="why">${p.history.map(h => `${h.stage} ${fmtDate(h.d).replace(/, \d{4}$/, "")}`).join(" → ")}</span>
-            ${p.submission ? `<div class="row" style="gap:6px"><span class="chip good">Consent ✓ ${esc(p.submission.consent.method.toLowerCase())}, ${fmtDate(p.submission.consent.d).replace(/, \d{4}$/, "")}</span><button class="linkish" style="font-size:.8rem" data-sub="${j.id}:${i}">View profile sent</button></div>`
-              : p.stage !== "Not a fit" && (c.owner === me || can("viewAll")) ? `<div class="row"><button class="btn sm" data-sub="${j.id}:${i}">Submit to ${esc(client(j.client).name)}</button><span class="muted" style="font-size:.76rem">Consent needed first</span></div>` : ""}
+            ${p.submission ? `<div class="row" style="gap:6px"><span class="chip good">Sent to client ${fmtDate(p.submission.d).replace(/, \d{4}$/, "")}</span><button class="linkish" style="font-size:.8rem" data-sub="${j.id}:${i}">View profile sent</button></div>`
+              : p.stage !== "Not a fit" && (c.owner === me || can("viewAll")) ? `<div class="row"><button class="btn sm" data-sub="${j.id}:${i}">Submit to ${esc(client(j.client).name)}</button></div>` : ""}
           </div>`).join("")}</div>` : `<div class="empty">Not in any pipeline yet. Shortlist from a job page.</div>`}</section>
         <section class="panel"><h2>Skills</h2><div class="skill-list">${c.skills.map(s => `<div class="skill"><span>${esc(s.n)}</span><span class="bar"><i style="width:${Math.round(s.y / maxY * 100)}%"></i></span><span class="num muted">${s.y}y</span></div>`).join("")}</div></section>
         <section class="panel"><h2>Matching open jobs</h2><div class="list">${matches.map(({ j, m }) => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1;min-width:0">${esc(j.title)}</strong><span class="score">${m.total}</span></span><span class="muted" style="font-size:.8rem">${esc(client(j.client).name)} · ${esc(j.city)}</span><span class="bar" style="width:100%"><i style="width:${m.total}%"></i></span>${m.gaps.length ? `<span class="why">${esc(m.gaps.slice(0, 2).join(" · "))}</span>` : `<span class="why" style="color:var(--good)">No gaps found</span>`}</button>`).join("") || `<div class="empty">No open jobs on your desk.</div>`}</div></section>
@@ -1175,7 +1173,7 @@ function viewPipeline() {
   const card = x => `<div class="pcard ${stuck(x) ? "stale" : ""}">
       <div class="row" style="gap:6px;flex-wrap:nowrap"><button class="linkish" style="font-weight:700;color:var(--fg);text-decoration:none" data-open="${x.c.id}">${esc(x.c.name)}</button><span class="spacer"></span>${can("viewAll") ? `<span class="avatar xs" title="${esc(recruiter(x.c.owner)?.name || "")}">${recruiter(x.c.owner)?.initials || "?"}</span>` : ""}</div>
       <button class="linkish" style="font-size:.8rem;color:var(--muted);text-decoration:none" data-job="${x.j.id}">${esc(x.j.title)} · ${esc(client(x.j.client).name)}</button>
-      ${x.p.submission ? `<button class="chip good" style="justify-self:start;font-size:.7rem" data-sub="${x.j.id}:${x.i}">Consent ✓ · sent ${fmtDate(x.p.submission.d).replace(/, \d{4}$/, "")}</button>` : ""}
+      ${x.p.submission ? `<button class="chip good" style="justify-self:start;font-size:.7rem" data-sub="${x.j.id}:${x.i}">Sent to client ${fmtDate(x.p.submission.d).replace(/, \d{4}$/, "")}</button>` : ""}
       <div class="row" style="gap:6px"><span class="num ${stuck(x) ? "" : "muted"}" style="font-size:.74rem;white-space:nowrap;${stuck(x) ? "color:var(--warn);font-weight:600" : ""}">${daysSince(x.p.since)}d in stage</span><span class="spacer"></span>
         <select class="input mini" data-pstage="${x.j.id}:${x.i}" aria-label="Move ${esc(x.c.name)}">${STAGES.map(st => `<option ${st === x.p.stage ? "selected" : ""}>${st}</option>`).join("")}</select></div>
     </div>`;
@@ -1286,10 +1284,9 @@ function viewCompliance() {
   const cs = visCands(), js = visJobs(), r = recruiter(me);
   const consentRows = cs.map(c => ({ c, k: consentState(c) })).filter(x => x.k.cls !== "good");
   const implied = cs.filter(c => c.consent?.casl === "Implied");
-  const noConsent = js.flatMap(j => j.pipeline.map((p, i) => ({ j, p, i, c: cand(p.c) }))).filter(x => x.c && cs.includes(x.c) && STAGES.indexOf(x.p.stage) >= SUBMIT_AT && x.p.stage !== "Not a fit" && !x.p.submission);
   const jobRows = js.map(j => ({ j, bad: postingChecks(j).filter(x => x[0] !== "good") })).filter(x => x.bad.length);
   const rules = [
-    ["Privacy: PIPEDA, Québec Law 25, Alberta & BC PIPA", "Get the candidate's consent each time you send their profile to a client; TalentBook records it on the pipeline entry and strips contact details from the client copy. Get meaningful consent before collecting a résumé, use it only for recruiting, keep it no longer than needed, and give candidates access on request. TalentBook records consent method, date and a retention date for every candidate."],
+    ["Privacy: PIPEDA, Québec Law 25, Alberta & BC PIPA", "Get meaningful consent before collecting a résumé, use it only for recruiting, keep it no longer than needed, and give candidates access on request. TalentBook records consent method, date and a retention date for every candidate, and strips contact details from profiles sent to clients."],
     ["Anti-spam: CASL", "Job alerts by email or SMS need express consent, or implied consent that lapses after 2 years. Each candidate shows their CASL status."],
     ["Ontario job postings (ESA, from 1 Jan 2026)", "Employers with 25+ staff must show a pay range no wider than $50k (for jobs up to $200k), say whether AI screens applicants, not require Canadian experience, say whether the vacancy exists, and reply to interviewed candidates within 45 days."],
     ["Pay transparency in other provinces", "BC (since Nov 2023) and PEI require a pay range in postings. TalentBook checks each job against its province."],
@@ -1312,7 +1309,6 @@ function viewCompliance() {
           ${consentRows.map(({ c, k }) => `<tr class="click" data-open="${c.id}"><td>${esc(c.name)}</td><td><span class="chip ${k.cls}">${k.label}</span></td><td>Reconfirm consent or delete the record</td></tr>`).join("")}
           ${implied.filter(c => !consentRows.some(x => x.c === c)).map(c => `<tr class="click" data-open="${c.id}"><td>${esc(c.name)}</td><td><span class="chip warn">CASL implied, expires ${fmtDate(addDays(c.consent.date, 730))}</span></td><td>Ask for express consent before email alerts</td></tr>`).join("")}
         </tbody></table></div>` : `<div class="empty">Every candidate has current consent.</div>`}</section>
-        <section class="panel"><h2>Submissions without consent</h2>${noConsent.length ? noConsent.map(x => `<div class="row" style="margin-bottom:6px"><span style="flex:1">${esc(x.c.name)} · ${esc(x.j.title)} <span class="chip bad">${x.p.stage}</span></span><button class="btn sm" data-sub="${x.j.id}:${x.i}">Record consent</button></div>`).join("") : `<div class="empty">Every candidate sent to a client has consent on record.</div>`}</section>
         <section class="panel"><h2>Job postings to fix</h2>${jobRows.length ? jobRows.map(({ j, bad }) => `<button class="card" data-job="${j.id}" style="margin-bottom:8px;width:100%"><strong>${esc(j.title)} · ${j.prov}</strong>${bad.map(([s, t]) => `<span class="row" style="font-size:.84rem;flex-wrap:nowrap;align-items:flex-start"><span class="ic ${s}" style="width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:.7rem;flex:none">${s === "warn" ? "!" : "✕"}</span>${esc(t)}</span>`).join("")}</button>`).join("") : `<div class="empty">All your postings pass.</div>`}</section>
       </div>
       <section class="panel"><h2>Rules this demo follows</h2>${rules.map(([h, t]) => `<div class="check" style="grid-template-columns:1fr"><span><strong>${esc(h)}</strong><br><span class="muted">${esc(t)}</span></span></div>`).join("")}
@@ -1464,8 +1460,6 @@ function viewAddClient() {
   </div></div>`;
 }
 
-const SUBMIT_AT = STAGES.indexOf("Submitted");
-const needsConsent = (p, stage) => STAGES.indexOf(stage) >= SUBMIT_AT && stage !== "Not a fit" && !p.submission;
 function redact(text, c, nameMode) {
   let t = String(text || "")
     .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[email removed]")
@@ -1499,35 +1493,26 @@ function clientProfile(c, j, o) {
     "RECRUITER SUMMARY", redact(o.pitch, c, o.nameMode), "",
     "MATCH FOR THIS ROLE", ...j.must.map(s => `${m.mustHit.includes(s) ? "✓" : "✗"} ${s}`), ...m.niceHit.map(s => `+ ${s}`), "",
     "RÉSUMÉ (contact details removed)", redact(resumeText(c), c, o.nameMode), "",
-    `Confidential. Shared with ${k.name} only, with the candidate's consent given ${fmtDate(o.consentDate || ago(0))}. Please arrange all contact and interviews through ${DB.company.name}.`
+    `Confidential. Shared with ${k.name} only. Please arrange all contact and interviews through ${DB.company.name}.`
   ].filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n");
 }
 function submitForm() {
   const v = id => document.getElementById(id)?.value?.trim() ?? "", ck = id => !!document.getElementById(id)?.checked;
-  return { nameMode: ck("sb-initials") ? "initials" : "full", includePay: ck("sb-pay"), pitch: v("sb-pitch"), consentDate: v("sb-cdate") || ago(0), by: me };
+  return { nameMode: ck("sb-initials") ? "initials" : "full", includePay: ck("sb-pay"), pitch: v("sb-pitch"), by: me };
 }
 function viewSubmit() {
   const j = job(ui.sub.jid), p = j.pipeline[ui.sub.i], c = cand(p.c), k = client(j.client);
   const done = p.submission;
-  const o = done ? { ...done, pitch: done.pitch || defaultPitch(c, j), consentDate: done.consent.d } : { nameMode: "full", includePay: true, pitch: defaultPitch(c, j), consentDate: ago(0), by: me };
+  const o = done ? { ...done, pitch: done.pitch || defaultPitch(c, j) } : { nameMode: "full", includePay: true, pitch: defaultPitch(c, j), by: me };
   return `<div class="scrim" data-act="close-scrim"><div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="sb-title">
     <div class="panel-head"><div style="min-width:0"><h2 id="sb-title">${done ? "Profile sent to" : "Submit to"} ${esc(k.name)}</h2><p class="muted" style="font-size:.82rem">${esc(c.name)} · ${esc(j.title)}</p></div><span class="spacer"></span><button class="btn ghost sm" data-act="close">Close</button></div>
     <div class="sub-grid">
       ${done ? `<div class="stack">
-          <div class="notice info"><strong>Sent ${fmtDate(done.d)}</strong> by ${esc(userName(done.by))}.<br>Consent: ${esc(done.consent.method)}, ${fmtDate(done.consent.d)}, recorded by ${esc(userName(done.consent.by))}.${done.consent.note ? `<br><span class="muted">${esc(done.consent.note)}</span>` : ""}</div>
+          <div class="notice info"><strong>Sent ${fmtDate(done.d)}</strong> by ${esc(userName(done.by))}.</div>
           <p class="demo-note">This is the exact profile the client received. Phone, email, LinkedIn and home address were removed.</p>
         </div>`
       : `<form id="sub-form" class="stack">
-          <fieldset class="panel consent-box"><legend class="eyebrow" style="padding:0 6px">1 · Candidate consent for this submission</legend>
-            <p style="font-size:.86rem">Before sending, confirm the candidate agreed to be put forward to <strong>${esc(k.name)}</strong> for <strong>${esc(j.title)}</strong>. Consent covers this one client and role only.</p>
-            <div class="form-grid">
-              <div class="field"><label for="sb-method">How did they agree?</label><select class="input" id="sb-method"><option>Phone call</option><option>Email reply</option><option>Text message</option><option>In person</option></select></div>
-              <div class="field"><label for="sb-cdate">Date</label><input class="input" type="date" id="sb-cdate" value="${ago(0)}" max="${ago(0)}"></div>
-              <div class="field full"><label for="sb-cnote">Note (optional)</label><input class="input" id="sb-cnote" placeholder="e.g. Happy with the pay range, wants Fridays remote"></div>
-            </div>
-            <label class="row" style="font-size:.86rem;align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="sb-consent" required style="margin-top:3px"> <span>The candidate knows the client's name, the role and the pay range, and agreed to this submission.</span></label>
-          </fieldset>
-          <fieldset class="panel"><legend class="eyebrow" style="padding:0 6px">2 · What the client sees</legend>
+          <fieldset class="panel"><legend class="eyebrow" style="padding:0 6px">What the client sees</legend>
             <div class="stack" style="gap:8px">
               <label class="row" style="font-size:.86rem"><input type="checkbox" id="sb-initials"> Show initials instead of the full name</label>
               <label class="row" style="font-size:.86rem"><input type="checkbox" id="sb-pay" checked> Include expected pay</label>
@@ -1535,7 +1520,7 @@ function viewSubmit() {
               <p class="demo-note">Phone, email, LinkedIn, home address and postal code are always removed, including from the résumé and your summary.</p>
             </div>
           </fieldset>
-          <div class="row"><button class="btn primary">Record consent &amp; submit</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>
+          <div class="row"><button class="btn primary">Mark as submitted</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>
         </form>`}
       <div class="stack" style="gap:8px;min-width:0">
         <div class="row"><span class="eyebrow">Preview · client copy</span><span class="spacer"></span><button class="btn sm" data-act="copy-profile">Copy text</button></div>
@@ -1630,7 +1615,6 @@ document.addEventListener("change", e => {
   if (e.target.id === "status-sel") { cand(ui.id).status = e.target.value; save(); toast("Status updated"); }
   if (e.target.dataset.pstage) {
     const [jid, i] = e.target.dataset.pstage.split(":"), p = job(jid).pipeline[+i];
-    if (needsConsent(p, e.target.value)) { e.target.value = p.stage; ui.sub = { jid, i: +i, then: e.target.value }; ui.modal = "submit"; render(); toast("Record the candidate's consent before submitting"); return; }
     if (p.stage !== e.target.value) { p.stage = e.target.value; p.since = ago(0); p.history.push({ stage: p.stage, d: ago(0) }); save(); toast(`Moved to ${p.stage}`); }
   }
   if (e.target.closest?.("#sub-form")) refreshPreview();
@@ -1674,12 +1658,10 @@ document.addEventListener("submit", e => {
       cand(ui.id).linkedin = u; ui.modal = null; ui.liErr = null; save(); toast(u ? "LinkedIn link saved" : "LinkedIn link removed"); break;
     }
     case "sub-form": {
-      const j = job(ui.sub.jid), p = j.pipeline[ui.sub.i], o = submitForm(), v2 = id => document.getElementById(id)?.value?.trim() ?? "";
-      p.submission = { d: ago(0), by: me, nameMode: o.nameMode, includePay: o.includePay, pitch: o.pitch,
-        consent: { d: o.consentDate, method: v2("sb-method"), by: me, note: v2("sb-cnote") } };
-      const target = ui.sub.then && STAGES.indexOf(ui.sub.then) > SUBMIT_AT ? ui.sub.then : "Submitted";
-      if (STAGES.indexOf(p.stage) < STAGES.indexOf(target)) { p.stage = target; p.since = ago(0); p.history.push({ stage: target, d: ago(0) }); }
-      const c = cand(p.c); c.comms.push({ d: ago(0), type: "Email", dir: "Outbound", by: me, s: `Profile submitted to ${client(j.client).name} for ${j.title} (contact details removed). Consent: ${p.submission.consent.method.toLowerCase()}, ${fmtDate(p.submission.consent.d)}.` });
+      const j = job(ui.sub.jid), p = j.pipeline[ui.sub.i], o = submitForm();
+      p.submission = { d: ago(0), by: me, nameMode: o.nameMode, includePay: o.includePay, pitch: o.pitch };
+      if (STAGES.indexOf(p.stage) < STAGES.indexOf("Submitted")) { p.stage = "Submitted"; p.since = ago(0); p.history.push({ stage: "Submitted", d: ago(0) }); }
+      const c = cand(p.c); c.comms.push({ d: ago(0), type: "Email", dir: "Outbound", by: me, s: `Profile submitted to ${client(j.client).name} for ${j.title} (contact details removed).` });
       ui.modal = null; ui.sub = null; save(); toast(`Submitted to ${client(j.client).name}`); break;
     }
     case "job-form": {
