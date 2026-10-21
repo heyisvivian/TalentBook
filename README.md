@@ -30,7 +30,7 @@ Every account uses the password `demo`.
 | Record placements | ✓ | ✓ | ✓ |
 | See client fees, margins and invoices | ✓ | ✓ | |
 | See everyone's commission and net revenue | ✓ | | |
-| See their own commission | ✓ | | ✓ |
+| See their own commission | ✓ | ✓ | ✓ |
 | Set commission rates and mark commission paid | ✓ | | |
 | Add users and change roles | ✓ | | |
 
@@ -57,7 +57,7 @@ A placement is a candidate who accepted an offer and started with a client. It i
 - **Guarantee:** if the candidate leaves within the guarantee period, the placement is marked Fell off: replacing (fee kept, a replacement is owed) or refunded (fee removed from revenue).
 - **Two versions of the numbers.**
   - *Company version* (admin): what clients pay (fee or contract margin), collected and outstanding amounts, invoices, each person's commission and the net left for the company, a chart of fees by month, and a Needs attention list (guarantees ending, starts, invoices to send or chase, commission to pay).
-  - *Manager version*: client fees, margins and invoices (booked, collected, outstanding, fees by month and by person), but no commission and no net revenue.
+  - *Manager version*: client fees, margins and invoices (booked, collected, outstanding, fees by month and by person), plus their own commission. No one else's commission and no net revenue.
   - *Recruiter version*: only their own commission (fee × their commission rate): total for the last 12 months, paid out, payable now, and waiting for client payment or the end of the guarantee. Client fees, fee %, bill rates and invoices are not shown.
 - **Commission:** the admin sets each person's rate on the Team page. A placement keeps the rate it was recorded with. Commission is payable once the client has paid and the guarantee has ended; it goes on hold if the candidate leaves and a replacement is owed, and is cancelled if the fee is refunded. The admin marks commission as paid out.
 

@@ -1256,7 +1256,7 @@ function viewPipeline() {
 function viewTeam() {
   if (!can("manageUsers")) return `<div class="empty">Only admins can manage the team.</div>`;
   const rows = [["See and search every recruiter's candidates", 1, 1, 0], ["Upload résumés and keep their own candidates", 1, 1, 1], ["Edit a candidate record (owner only)", 1, 1, 1], ["Move candidates through the pipeline", 1, 1, 1],
-    ["See client contacts, fees and terms", 1, 1, 0], ["Log contacts and add notes on any candidate they can open", 1, 1, 1], ["Add and edit clients", 1, 1, 0], ["Add hiring preferences to their clients", 1, 1, 1], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Record placements", 1, 1, 1], ["See client fees, margins and invoices", 1, 1, 0], ["See everyone's commission and net revenue", 1, 0, 0], ["See their own commission", 1, 0, 1], ["Set commission rates and mark commission paid", 1, 0, 0], ["Add users and change roles", 1, 0, 0]];
+    ["See client contacts, fees and terms", 1, 1, 0], ["Log contacts and add notes on any candidate they can open", 1, 1, 1], ["Add and edit clients", 1, 1, 0], ["Add hiring preferences to their clients", 1, 1, 1], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Record placements", 1, 1, 1], ["See client fees, margins and invoices", 1, 1, 0], ["See everyone's commission and net revenue", 1, 0, 0], ["See their own commission", 1, 1, 1], ["Set commission rates and mark commission paid", 1, 0, 0], ["Add users and change roles", 1, 0, 0]];
   return `<div class="page-head"><div><h1>Team &amp; roles</h1><p>Who can do what in ${esc(DB.company.name)}.</p></div></div>
     <section class="panel"><h2>Permissions</h2><div class="table-wrap"><table><thead><tr><th>Action</th><th>Admin</th><th>Manager</th><th>Recruiter</th></tr></thead><tbody>
       ${rows.map(([a, ...r]) => `<tr><td>${a}</td>${r.map(v => `<td>${v ? `<span class="ic good" style="display:inline-grid;width:20px;height:20px;border-radius:50%;place-items:center;font-size:.72rem">✓</span>` : `<span class="muted">—</span>`}</td>`).join("")}</tr>`).join("")}
@@ -1616,6 +1616,7 @@ function placementSummary(j, c, o) {
   if (can("viewRevenue")) {
     lines.push(o.contract ? `Margin ${money(o.fee)}: (${money(o.contract.bill)} − ${money(o.contract.pay)}) × ${o.contract.hours} h × ${o.contract.weeks} weeks` : `Fee ${money(o.fee)}: ${o.feePct}% of ${money(o.salary)}`);
     if (can("viewCommission")) lines.push(`Commission to ${who?.name || "—"}: ${money(comm)} (${rate}%) · net to company ${money(o.fee - comm)}`);
+    else if (who?.id === me) lines.push(`Your commission: ${money(comm)} at your ${rate}% rate.`);
   } else lines.push(`Your commission: ${money(comm)} at your ${rate}% rate, paid once the client has paid and the guarantee has ended.`);
   return lines.map(l => `<div>${esc(l)}</div>`).join("");
 }
@@ -1667,7 +1668,7 @@ function feeChart(list, val = x => x.fee, label = "Fees") {
     ${bars}</svg><div class="chart-tip" id="chart-tip" hidden></div></div>`;
 }
 function viewPlacements() {
-  const boss = can("viewRevenue"), seeComm = can("viewCommission"), showComm = seeComm || !boss, list = visPlacements().slice().sort((a, b) => b.start.localeCompare(a.start));
+  const boss = can("viewRevenue"), seeComm = can("viewCommission"), showComm = seeComm || !boss, ownComm = boss && !seeComm, list = visPlacements().slice().sort((a, b) => b.start.localeCompare(a.start));
   const last12 = list.filter(x => daysSince(x.start) <= 365), live = last12.filter(x => !refunded(x));
   const sum = (arr, f) => arr.reduce((a, x) => a + f(x), 0);
   const inGuar = list.filter(x => guarState(x).label.startsWith("In guarantee"));
@@ -1696,9 +1697,17 @@ function viewPlacements() {
       <div class="stat"><b>${money(sum(live.filter(x => !x.commissionPaid && commState(x).label !== "Payable now"), commissionOf))}</b><span>Waiting for payment or guarantee</span></div>`;
   const byRec = boss ? DB.recruiters.map(u => { const m = live.filter(x => x.recruiter === u.id); return { u, n: m.length, fee: sum(m, x => x.fee), comm: sum(m, commissionOf) }; }).filter(r => r.n) : [];
   return `<div class="page-head"><div><h1>${boss ? "Placements & revenue" : "My placements & commission"}</h1>
-      <p>${seeComm ? "Company view: what clients pay, what is collected, and what is left after commission." : boss ? "Manager view: what clients pay, and what is invoiced and collected. Commission and net revenue are visible to the admin only." : `Your view: the commission you earn on your placements, at your ${me_.commission || 0}% rate set by your admin. Client fees are not shown.`}</p></div>
+      <p>${seeComm ? "Company view: what clients pay, what is collected, and what is left after commission." : boss ? "Manager view: what clients pay, and what is invoiced and collected. Other people's commission and net revenue are visible to the admin only." : `Your view: the commission you earn on your placements, at your ${me_.commission || 0}% rate set by your admin. Client fees are not shown.`}</p></div>
       <span class="spacer"></span><span class="chip ${seeComm ? "role-admin" : boss ? "role-manager" : "role-recruiter"}">${seeComm ? "Company version" : boss ? "Manager version" : "Recruiter version"}</span></div>
     <div class="stats">${stats}</div>
+    ${ownComm ? (() => { const mineL = live.filter(x => x.recruiter === me), pay = mineL.filter(x => commState(x).label === "Payable now");
+      return `<section class="panel"><div class="panel-head"><h2>My commission</h2><span class="muted" style="font-size:.82rem">At your ${me_.commission || 0}% rate, on placements credited to you. Only you and the admin see this.</span></div>
+      <div class="stats">
+        <div class="stat"><b>${money(sum(mineL, commissionOf))}</b><span>Last 12 months · ${mineL.length} placement${mineL.length === 1 ? "" : "s"}</span></div>
+        <div class="stat"><b style="color:var(--good)">${money(sum(mineL.filter(x => x.commissionPaid), commissionOf))}</b><span>Paid out to me</span></div>
+        <div class="stat"><b style="color:var(--accent)">${money(sum(pay, commissionOf))}</b><span>Payable now</span></div>
+        <div class="stat"><b>${money(sum(mineL.filter(x => !x.commissionPaid && commState(x).label !== "Payable now"), commissionOf))}</b><span>Waiting for payment or guarantee</span></div>
+      </div></section>`; })() : ""}
     ${attention.length ? `<section class="panel"><h2>Needs attention</h2>${attention.map(([cls, t, sub]) => `<div class="check"><span class="ic ${cls || "good"}">${cls === "bad" ? "$" : cls === "warn" ? "!" : "→"}</span><span><strong>${esc(t)}</strong><br><span class="muted" style="font-size:.8rem">${esc(sub)}</span></span></div>`).join("")}</section>` : ""}
     <div class="two">
       <section class="panel"><div class="panel-head"><h2>${boss ? "Fees" : "My commission"} by start month</h2><span class="muted" style="font-size:.8rem">Last 12 months, refunds excluded</span></div>${boss ? feeChart(list) : feeChart(list, commissionOf, "Commission")}</section>
@@ -1706,7 +1715,7 @@ function viewPlacements() {
         : `<section class="panel"><h2>How commission works</h2><ul class="pain moti"><li>You earn ${me_.commission || 0}% on each placement credited to you.</li><li>It becomes payable once the client has paid the invoice and the guarantee period has ended.</li><li>If the candidate leaves during the guarantee, it is put on hold until the role is filled again, or cancelled if the client is refunded.</li></ul><p class="muted" style="font-size:.8rem;margin-top:10px">${inGuar.length} placement${inGuar.length === 1 ? " is" : "s are"} in guarantee now; ${starting.length} starting soon.</p></section>`}
     </div>
     <section class="panel"><h2>All placements</h2><div class="table-wrap"><table class="tight">
-      <thead><tr><th>Candidate</th><th>Client · job</th><th>Start</th>${boss ? "<th>Fee</th><th>Invoice</th>" : "<th>Pay</th>"}${showComm ? `<th>${boss ? "Commission" : "My commission"}</th>` : ""}<th>Guarantee</th></tr></thead>
+      <thead><tr><th>Candidate</th><th>Client · job</th><th>Start</th>${boss ? "<th>Fee</th><th>Invoice</th>" : "<th>Pay</th>"}${showComm || ownComm ? `<th>${seeComm ? "Commission" : "My commission"}</th>` : ""}<th>Guarantee</th></tr></thead>
       <tbody>${list.map(x => { const g = guarState(x), inv = invState(x), cs = commState(x); return `<tr>
         <td>${name(x)}</td>
         <td style="min-width:160px">${esc(client(x.client).name)}<br><span class="muted">${esc(x.jobTitle)} · ${x.type}</span></td>
@@ -1714,7 +1723,7 @@ function viewPlacements() {
         ${!boss ? `<td class="num" style="white-space:nowrap">${x.contract ? `${money(x.contract.pay)}/h · ${x.contract.weeks} wks` : money(x.salary)}</td>` : ""}
         ${boss ? `<td class="num" style="white-space:nowrap">${refunded(x) ? `<s>${money(x.fee)}</s>` : money(x.fee)}<br><span class="muted" style="font-size:.75rem">${x.contract ? `bill ${rate(x.contract.bill)} · pay ${rate(x.contract.pay)}/h<br>× ${x.contract.hours} h × ${x.contract.weeks} wks` : `${x.feePct}% of ${money(x.salary)}`}</span></td>
           <td><select class="input mini" data-inv="${x.id}" aria-label="Invoice status">${["Not invoiced", "Invoiced", "Paid"].map(st => `<option ${st === x.invoice.status ? "selected" : ""}>${st}</option>`).join("")}</select><br><span class="chip ${inv.cls}" style="margin-top:4px">${inv.label}</span></td>` : ""}
-        ${showComm ? `<td style="min-width:140px"><span class="num">${refunded(x) ? `<s>${money(Math.round(x.fee * (x.commissionPct || 0) / 100))}</s>` : money(commissionOf(x))}</span>${boss ? `<br><span class="muted" style="font-size:.75rem">${x.commissionPct || 0}% to ${esc(firstName(x.recruiter))}</span>` : ""}<br><span class="chip ${cs.cls}" style="margin-top:4px">${cs.label}</span>${can("manageUsers") && cs.label === "Payable now" ? `<br><button class="btn sm" style="margin-top:4px" data-payout="${x.id}">Mark paid out</button>` : ""}` : ""}
+        ${ownComm && x.recruiter !== me ? `<td><span class="muted">—</span></td>` : ""}${showComm || (ownComm && x.recruiter === me) ? `<td style="min-width:140px"><span class="num">${refunded(x) ? `<s>${money(Math.round(x.fee * (x.commissionPct || 0) / 100))}</s>` : money(commissionOf(x))}</span>${boss ? `<br><span class="muted" style="font-size:.75rem">${x.commissionPct || 0}% to ${esc(firstName(x.recruiter))}</span>` : ""}<br><span class="chip ${cs.cls}" style="margin-top:4px">${cs.label}</span>${can("manageUsers") && cs.label === "Payable now" ? `<br><button class="btn sm" style="margin-top:4px" data-payout="${x.id}">Mark paid out</button>` : ""}` : ""}
         <td style="min-width:150px"><span class="chip ${g.cls}">${g.label}</span>${x.guaranteeDays ? `<br><span class="muted" style="font-size:.75rem">${x.guaranteeDays} days, to ${fmtDate(guarEnd(x))}</span>` : ""}
           ${boss ? `<br><select class="input mini" style="margin-top:4px" data-plstatus="${x.id}" aria-label="Placement status">${["Active", "Fell off · replacing", "Fell off · refunded"].map(st => `<option ${st === x.status ? "selected" : ""}>${st}</option>`).join("")}</select>` : ""}</td>
       </tr>`; }).join("") || `<tr><td colspan="9"><div class="empty">No placements yet.</div></td></tr>`}</tbody>
