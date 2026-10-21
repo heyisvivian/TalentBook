@@ -20,8 +20,8 @@ All three work for IV Recruitment and use the password `demo`. Each recruiter se
 
 - **Ask**: natural-language search such as "P.Eng structural engineers in the GTA under 130k" or "candidates not contacted in 3 months". The page shows how it read the query as removable chips. In the demo a rule-based parser stands in for the LLM.
 - **Home**: counts for the desk, a follow-up queue (60+ days without contact) and open jobs with their best match.
-- **Candidate profile**: AI-style summary, memory cards, pain points and reasons to move, timeline of calls and emails, key facts (pay in CAD, work mode, relocation, notice, work authorization, languages), skills with years, matching open jobs, and consent status.
-- **Résumé upload**: PDF, Word (.docx) or text, read in the browser (pdf.js and mammoth.js from cdnjs). Fields are extracted for review before saving. It warns when the person is already on a colleague's desk, and it does not store protected-ground details.
+- **Candidate profile**: AI-style summary, memory cards, pain points and reasons to move, timeline of calls and emails, key facts (pay in CAD, work mode, relocation, notice, work authorization, languages), skills with years, matching open jobs, and consent status. Each profile has a View résumé button (the text of the uploaded résumé) and a LinkedIn profile link that can be added or edited.
+- **Résumé upload**: PDF, Word (.docx) or text, read in the browser (pdf.js and mammoth.js from cdnjs). Fields, including the LinkedIn URL, are extracted for review before saving. It warns when the person is already on a colleague's desk, and it does not store protected-ground details.
 - **Jobs**: candidates ranked out of 100 (skills 55, location 20, salary 15, credentials 10) with gaps listed, a pipeline, the client's preferences, and a job-posting check against the rules of the job's province.
 - **Clients**: hiring preferences, things to avoid, contacts, fee and guarantee terms.
 - **Compliance**: consent and retention issues, CASL status, and job postings to fix.

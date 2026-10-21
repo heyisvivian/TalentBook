@@ -69,6 +69,9 @@ button { cursor: pointer; }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .btn.ghost:hover { color: var(--fg); background: var(--surface-2); }
 .btn.sm { padding: 4px 9px; font-size: .8rem; }
+a.btn { text-decoration: none; color: inherit; }
+.linkish { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; font: inherit; text-align: left; }
+.resume-sheet { background: var(--surface-2); border-radius: 10px; padding: 18px 20px; white-space: pre-wrap; font-size: .88rem; line-height: 1.6; max-height: 60vh; overflow: auto; overflow-wrap: anywhere; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .field { display: grid; gap: 4px; min-width: 0; }
 .field label { font-size: .78rem; font-weight: 600; color: var(--muted); }
@@ -256,7 +259,7 @@ button.card:hover { border-color: var(--accent); }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v3";
+const STORE_KEY = "talentbook-demo-v4";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -526,6 +529,10 @@ function seed() {
       status: "Open", opened: ago(27), posting: { ai: "", vacancy: "existing", fr: false, text: "Controls for gas processing facilities. 25% field." },
       pipeline: [] }
   ];
+  candidates.forEach(c => {
+    c.linkedin = c.id === "c7" ? "" : `https://www.linkedin.com/in/${norm(c.name).replace(/[^a-z]+/g, "-")}-demo`;
+    c.resumeDate = c.consent.date;
+  });
   return { company, recruiters, candidates, clients, jobs };
 }
 
@@ -573,8 +580,27 @@ const icons = {
   brief: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18"/></svg>',
   building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 10h4a1 1 0 0 1 1 1v10M2 21h20M8 8h3M8 12h3M8 16h3"/></svg>',
   shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" width="16" height="16"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
+  linkedin: '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.5h4V21H3zM9.5 9.5h3.8v1.6h.1c.5-1 1.8-2 3.7-2 4 0 4.7 2.6 4.7 6V21h-4v-5.2c0-1.2 0-2.9-1.8-2.9s-2 1.4-2 2.8V21h-4z"/></svg>',
   upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>'
 };
+
+function resumeText(c) {
+  if (c.resumeText) return c.resumeText;
+  return [
+    c.name, `${c.title}${c.designations.length ? ", " + c.designations.join(", ") : ""}`,
+    `${c.city}, ${c.prov} · ${c.email} · ${c.phone}${c.linkedin ? " · " + c.linkedin.replace(/^https?:\/\/(www\.)?/, "") : ""}`, "",
+    "SUMMARY", `${c.title} with ${c.years} years of experience. Strongest in ${c.skills.slice(0, 3).map(s => s.n).join(", ")}.`, "",
+    "SKILLS", c.skills.map(s => `${s.n} (${s.y} yrs)`).join(" · "), "",
+    "LANGUAGES", c.langs.join(", "), "",
+    "LICENCES & DESIGNATIONS", c.designations.length ? c.designations.join(", ") : "None listed"
+  ].join("\n");
+}
+function cleanLinkedIn(u) {
+  u = String(u || "").trim(); if (!u) return "";
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+  return /^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/in\/[\w%-]+\/?$/i.test(u) ? u.replace(/^http:/i, "https:") : null;
+}
 
 /* ---------------- natural-language search ---------------- */
 const SKILL_ALIASES = {
@@ -931,6 +957,12 @@ function viewCandidate() {
         <div class="row" style="margin-top:6px"><span class="chip ${r.cls}"><span class="dot ${r.cls}"></span>Last contact ${r.label.toLowerCase()}</span><span class="chip">${esc(c.status)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}<span class="chip ${k.cls}">${k.label}</span></div></div>
       <div class="row"><select class="input" id="status-sel" style="width:auto" aria-label="Candidate status">${["Active", "Passive", "Placed", "Do not contact"].map(s => `<option ${s === c.status ? "selected" : ""}>${s}</option>`).join("")}</select><button class="btn primary" data-act="log">Log contact</button></div>
     </div>
+    <div class="row">
+      <button class="btn" data-act="view-resume">${icons.doc}View résumé</button>
+      ${c.linkedin ? `<a class="btn" href="${esc(c.linkedin)}" target="_blank" rel="noopener noreferrer">${icons.linkedin}LinkedIn profile ↗</a>` : `<button class="btn" data-act="edit-linkedin">${icons.linkedin}Add LinkedIn</button>`}
+      ${c.linkedin ? `<button class="btn ghost sm" data-act="edit-linkedin">Edit link</button>` : ""}
+    </div>
+    ${ui.modal === "linkedin" ? `<form id="li-form" class="row"><input class="input" id="li-url" style="flex:1;min-width:220px" placeholder="https://www.linkedin.com/in/name" value="${esc(c.linkedin)}" aria-label="LinkedIn profile URL"><button class="btn primary sm">Save link</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button>${ui.liErr ? `<span class="err">${esc(ui.liErr)}</span>` : ""}</form>` : ""}
     <div class="summary"><span class="eyebrow">AI summary</span><p>${aiSummary(c)}</p></div>
     <div class="two">
       <div class="stack">
@@ -957,7 +989,8 @@ function viewCandidate() {
           <dt>Work authorization</dt><dd>${esc(c.auth)}${/lmia/i.test(c.auth) ? ` <span class="chip warn">LMIA</span>` : ""}</dd>
           <dt>Languages</dt><dd>${c.langs.join(", ")}</dd>
           <dt>Contact</dt><dd>${esc(c.email)}<br><span class="num">${esc(c.phone)}</span></dd>
-          <dt>Résumé</dt><dd>${esc(c.resume || "None on file")}</dd>
+          <dt>Résumé</dt><dd>${c.resume ? `<button class="linkish" data-act="view-resume">${esc(c.resume)}</button><br><span class="muted" style="font-size:.8rem">Added ${fmtDate(c.resumeDate || c.consent.date)}</span>` : "None on file"}</dd>
+          <dt>LinkedIn</dt><dd>${c.linkedin ? `<a href="${esc(c.linkedin)}" target="_blank" rel="noopener noreferrer">${esc(c.linkedin.replace(/^https?:\/\/(www\.)?/, ""))}</a>` : `<button class="linkish" data-act="edit-linkedin">Add link</button>`}</dd>
         </dl></section>
         <section class="panel"><h2>Skills</h2><div class="skill-list">${c.skills.map(s => `<div class="skill"><span>${esc(s.n)}</span><span class="bar"><i style="width:${Math.round(s.y / maxY * 100)}%"></i></span><span class="num muted">${s.y}y</span></div>`).join("")}</div></section>
         <section class="panel"><h2>Matching open jobs</h2><div class="list">${matches.map(({ j, m }) => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1;min-width:0">${esc(j.title)}</strong><span class="score">${m.total}</span></span><span class="muted" style="font-size:.8rem">${esc(client(j.client).name)} · ${esc(j.city)}</span><span class="bar" style="width:100%"><i style="width:${m.total}%"></i></span>${m.gaps.length ? `<span class="why">${esc(m.gaps.slice(0, 2).join(" · "))}</span>` : `<span class="why" style="color:var(--good)">No gaps found</span>`}</button>`).join("") || `<div class="empty">No open jobs on your desk.</div>`}</div></section>
@@ -1085,6 +1118,7 @@ function viewCompliance() {
 const SAMPLE_CV = `Nadia Bouchard
 Civil Engineer, P.Eng
 Toronto, ON · nadia.bouchard@mail.example · (416) 555-0166
+linkedin.com/in/nadia-bouchard-demo
 
 SUMMARY
 Municipal and transportation civil engineer with 7 years of experience designing roads, watermains and stormwater systems for Ontario municipalities.
@@ -1114,8 +1148,9 @@ function extractFromText(text) {
   if (/p\.?\s?eng/i.test(text)) designations.push("P.Eng"); if (/\bEIT\b/.test(text)) designations.push("EIT"); if (/\bPMP\b/.test(text)) designations.push("PMP"); if (/\bOIQ\b|\bing\.\s/.test(text)) designations.push("ing. (OIQ)");
   const yrs = (text.match(/(\d{1,2})\+?\s+years/i) || [])[1];
   const langs = ["English"]; if (/french|français|bilingual/i.test(text)) langs.push("French");
+  const linkedin = (text.match(/(?:https?:\/\/)?(?:[a-z]{2,3}\.)?linkedin\.com\/in\/[\w%-]+\/?/i) || [""])[0];
   const protectedHits = ["date of birth", "dob", "marital status", "married", "religion", "nationality", "age:"].filter(p => t.includes(p));
-  return { name, title: title.replace(/,\s*(p\.?eng|eit|pmp).*$/i, ""), email, phone, city: cityKey ? (CITY_LABEL[cityKey] || cityKey.replace(/\b\w/g, c => c.toUpperCase())) : "", prov: cityKey ? CITIES[cityKey] : "ON", skills, designations, years: yrs ? +yrs : "", langs, protectedHits };
+  return { name, title: title.replace(/,\s*(p\.?eng|eit|pmp).*$/i, ""), email, phone, city: cityKey ? (CITY_LABEL[cityKey] || cityKey.replace(/\b\w/g, c => c.toUpperCase())) : "", prov: cityKey ? CITIES[cityKey] : "ON", skills, designations, years: yrs ? +yrs : "", langs, linkedin, protectedHits };
 }
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Could not load " + src)); document.head.appendChild(s); }); }
 async function readFile(file) {
@@ -1171,6 +1206,7 @@ function viewUpload() {
           <div class="field"><label for="f-title">Current title</label><input class="input" id="f-title" required value="${esc(d.title)}"></div>
           <div class="field"><label for="f-email">Email</label><input class="input" id="f-email" type="email" value="${esc(d.email)}"></div>
           <div class="field"><label for="f-phone">Phone</label><input class="input" id="f-phone" value="${esc(d.phone)}"></div>
+          <div class="field full"><label for="f-linkedin">LinkedIn profile URL</label><input class="input" id="f-linkedin" value="${esc(d.linkedin)}" placeholder="https://www.linkedin.com/in/name"></div>
           <div class="field"><label for="f-city">City</label><input class="input" id="f-city" value="${esc(d.city)}"></div>
           <div class="field"><label for="f-prov">Province / territory</label><select class="input" id="f-prov">${provs.map(p => `<option ${p === d.prov ? "selected" : ""}>${p}</option>`).join("")}</select></div>
           <div class="field full"><label for="f-skills">Skills (comma separated)</label><input class="input" id="f-skills" value="${esc(d.skills.join(", "))}"></div>
@@ -1197,13 +1233,23 @@ function viewUpload() {
   </div></div>`;
 }
 
+function viewResume() {
+  const c = cand(ui.id); if (!c) return "";
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="cv-title">
+    <div class="panel-head"><div style="min-width:0"><h2 id="cv-title">${esc(c.resume || "Résumé")}</h2><p class="muted" style="font-size:.82rem">${esc(c.name)} · added ${fmtDate(c.resumeDate || c.consent.date)}</p></div><span class="spacer"></span>
+      ${c.linkedin ? `<a class="btn sm" href="${esc(c.linkedin)}" target="_blank" rel="noopener noreferrer">${icons.linkedin}LinkedIn ↗</a>` : ""}<button class="btn ghost sm" data-act="close">Close</button></div>
+    <div class="resume-sheet">${esc(resumeText(c))}</div>
+    <p class="demo-note">${c.resumeText ? "Text extracted from the uploaded file. The original file is not stored in this demo." : "Demo record: this résumé is generated from the profile. Uploaded résumés show their real text here."}</p>
+  </div></div>`;
+}
+
 /* ---------------- render & events ---------------- */
 function render() {
   const app = document.getElementById("app");
   const focusId = document.activeElement?.id, selStart = document.activeElement?.selectionStart;
   if (!me) { app.innerHTML = viewLogin(); return; }
   const views = { home: viewHome, candidates: viewCandidates, candidate: viewCandidate, jobs: viewJobs, job: viewJob, clients: viewClients, client: viewClient, compliance: viewCompliance };
-  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
+  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : ui.modal === "resume" ? viewResume() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
   if (focusId) { const el = document.getElementById(focusId); if (el && el.focus) { el.focus(); try { if (selStart != null) el.setSelectionRange(selStart, selStart); } catch (e) {} } }
   const drop = document.getElementById("drop");
   if (drop) {
@@ -1217,7 +1263,7 @@ async function handleFile(file) {
   try {
     const text = await readFile(file);
     if (!text.trim()) throw new Error("No text found. Scanned PDFs need OCR, which this demo does not include.");
-    ui.upload = { file: file.name, data: extractFromText(text) };
+    ui.upload = { file: file.name, text, data: extractFromText(text) };
   } catch (e) { ui.upload = { file: file.name, err: e.message }; }
   render();
 }
@@ -1241,11 +1287,13 @@ document.addEventListener("click", e => {
     case "logout": setMe(null); ui.view = "home"; ui.filters = null; ui.query = ""; render(); break;
     case "upload": ui.modal = "upload"; ui.upload = null; render(); break;
     case "upload-reset": ui.upload = null; render(); break;
-    case "sample": ui.upload = { file: "Nadia_Bouchard_CV.txt", data: extractFromText(SAMPLE_CV) }; render(); break;
+    case "sample": ui.upload = { file: "Nadia_Bouchard_CV.txt", text: SAMPLE_CV, data: extractFromText(SAMPLE_CV) }; render(); break;
     case "close-scrim": if (e.target === t) { ui.modal = null; render(); } break;
     case "close": ui.modal = null; render(); break;
     case "clear-search": ui.filters = null; ui.query = ""; render(); break;
     case "log": ui.modal = ui.modal === "log" ? null : "log"; render(); document.getElementById("log-text")?.focus(); break;
+    case "view-resume": ui.modal = "resume"; render(); break;
+    case "edit-linkedin": ui.modal = ui.modal === "linkedin" ? null : "linkedin"; ui.liErr = null; render(); document.getElementById("li-url")?.focus(); break;
     case "add-memo": ui.modal = ui.modal === "memo" ? null : "memo"; render(); document.getElementById("memo-text")?.focus(); break;
     case "renew": c.consent = { date: ago(0), method: "Email reply", casl: "Express", retainUntil: addDays(ago(0), 730) }; save(); toast("Consent renewed for 24 months"); break;
     case "export": {
@@ -1280,6 +1328,11 @@ document.addEventListener("submit", e => {
       ui.modal = null; save(); toast("Contact logged"); break;
     }
     case "memo-form": { cand(ui.id).memory.push({ d: ago(0), tag: v("memo-tag"), t: v("memo-text") }); ui.modal = null; save(); toast("Memory card saved"); break; }
+    case "li-form": {
+      const u = cleanLinkedIn(v("li-url"));
+      if (u === null) { ui.liErr = "Use a profile link like https://www.linkedin.com/in/name"; render(); return; }
+      cand(ui.id).linkedin = u; ui.modal = null; ui.liErr = null; save(); toast(u ? "LinkedIn link saved" : "LinkedIn link removed"); break;
+    }
     case "pref-form": { client(ui.id).prefs.push(v("pref-text")); save(); toast("Preference added"); break; }
     case "cand-form": {
       const smin = +v("f-smin") || 0, smax = +v("f-smax") || smin;
@@ -1290,7 +1343,7 @@ document.addEventListener("submit", e => {
         pains: v("f-pain").split("\n").map(s => s.trim()).filter(Boolean), motives: [], memory: [],
         comms: [{ d: ago(0), type: "Email", s: `Résumé received (${ui.upload.file}).` }],
         consent: v("f-consent") === "Pending" ? { date: ago(0), method: "Pending", casl: v("f-casl"), retainUntil: addDays(ago(0), 30) } : { date: ago(0), method: v("f-consent"), casl: v("f-casl"), retainUntil: addDays(ago(0), Math.round(+v("f-retain") * 30.4)) },
-        resume: ui.upload.file };
+        resume: ui.upload.file, resumeDate: ago(0), resumeText: (ui.upload.text || "").slice(0, 20000), linkedin: cleanLinkedIn(v("f-linkedin")) || "" };
       DB.candidates.push(c); save(); ui.upload = null; ui.modal = null; ui.view = "candidate"; ui.id = c.id; toast("Candidate saved to your desk"); break;
     }
   }
