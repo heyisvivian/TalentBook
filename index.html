@@ -256,7 +256,7 @@ button.card:hover { border-color: var(--accent); }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v2";
+const STORE_KEY = "talentbook-demo-v3";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -266,11 +266,11 @@ const uid = p => p + Math.random().toString(36).slice(2, 9);
 
 /* ---------------- seed data ---------------- */
 function seed() {
-  const company = { name: "Northbound Engineering Recruitment", short: "Northbound", tagline: "Engineering recruitment across Canada", hq: "Toronto, ON" };
+  const company = { name: "IV Recruitment", short: "IV Recruitment", tagline: "Engineering recruitment across Canada", hq: "Toronto, ON" };
   const recruiters = [
-    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Structural, Civil & Construction · Toronto", email: "maya.chen@northboundeng.example", licence: "ON recruiter licence RL-2024-0418" },
-    { id: "r2", name: "Julien Tremblay", initials: "JT", desk: "Electrical & Automation · Montréal", email: "julien.tremblay@northboundeng.example", licence: "ON recruiter licence RL-2024-0418" },
-    { id: "r3", name: "Priya Natarajan", initials: "PN", desk: "Energy & Geotechnical · Calgary", email: "priya.natarajan@northboundeng.example", licence: "ON recruiter licence RL-2024-0418" }
+    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Structural, Civil & Construction · Toronto", email: "maya.chen@ivrecruitment.example", licence: "ON recruiter licence RL-2024-0418" },
+    { id: "r2", name: "Julien Tremblay", initials: "JT", desk: "Electrical & Automation · Montréal", email: "julien.tremblay@ivrecruitment.example", licence: "ON recruiter licence RL-2024-0418" },
+    { id: "r3", name: "Priya Natarajan", initials: "PN", desk: "Energy & Geotechnical · Calgary", email: "priya.natarajan@ivrecruitment.example", licence: "ON recruiter licence RL-2024-0418" }
   ];
   const consent = (d, method, casl, months = 24) => ({ date: ago(d), method, casl, retainUntil: addDays(ago(d), Math.round(months * 30.4)) });
   const S = (n, y) => ({ n, y });

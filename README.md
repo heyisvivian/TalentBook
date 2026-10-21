@@ -2,19 +2,19 @@
 
 A demo of a recruitment tool for Canadian agencies, engineering firms and in-house recruiting teams. Recruiters search the candidates they have worked with in plain English. Each candidate profile pulls together memory cards, contact history, skills, pain points, location, expected pay and work preferences, and ranks the candidate against open jobs.
 
-One TalentBook system serves one company (single tenant). The demo company is Northbound Engineering Recruitment, an engineering recruitment firm with recruiters in Toronto, Montréal and Calgary. Data from different companies is never mixed; inside the company, each recruiter manages their own desk.
+One TalentBook system serves one company (single tenant). The demo company is IV Recruitment, an engineering recruitment firm with recruiters in Toronto, Montréal and Calgary. Data from different companies is never mixed; inside the company, each recruiter manages their own desk.
 
 This is a front-end demo with no backend. Open `index.html` in a browser. Data is seeded in the page and saved in the browser's localStorage.
 
 ## Demo accounts
 
-All three work for Northbound and use the password `demo`. Each recruiter sees only their own candidates, clients and jobs.
+All three work for IV Recruitment and use the password `demo`. Each recruiter sees only their own candidates, clients and jobs.
 
 | Recruiter | Desk | Email |
 |---|---|---|
-| Maya Chen | Structural, Civil & Construction, Toronto | maya.chen@northboundeng.example |
-| Julien Tremblay | Electrical & Automation, Montréal | julien.tremblay@northboundeng.example |
-| Priya Natarajan | Energy & Geotechnical, Calgary | priya.natarajan@northboundeng.example |
+| Maya Chen | Structural, Civil & Construction, Toronto | maya.chen@ivrecruitment.example |
+| Julien Tremblay | Electrical & Automation, Montréal | julien.tremblay@ivrecruitment.example |
+| Priya Natarajan | Energy & Geotechnical, Calgary | priya.natarajan@ivrecruitment.example |
 
 ## What the demo does
 
@@ -48,7 +48,7 @@ Sources: [Ontario licensing for recruiters](https://www.ontario.ca/page/licensin
 
 1. Backend and database with real authentication (the company's SSO), row-level access per recruiter and a company admin role. Each company gets its own deployment and database.
 2. Canadian data residency (for example AWS ca-central-1) and a privacy impact assessment, required under Law 25 for Québec data, including before sending data outside Québec.
-3. Real LLM search and résumé parsing, with the AI-use disclosure Ontario now requires and a human review step.
+3. Real AI search and résumé parsing, with the AI-use disclosure Ontario now requires and a human review step. Plan: an open-weight model (for example Llama, Qwen or Mistral) self-hosted on a server in Canada. There is no per-query API fee and candidate data stays in Canada; the cost is the GPU server. The model turns a query into the same filters the demo uses (skills, city, pay, last contact), and embeddings handle "similar to this candidate" searches.
 4. Retention jobs that delete or anonymise candidates when their retention date passes.
 5. French interface for Québec clients.
 6. Email and calendar sync so contact history fills in automatically, with CASL unsubscribe handling.
