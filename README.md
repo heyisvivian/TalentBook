@@ -6,15 +6,37 @@ One TalentBook system serves one company (single tenant). The demo company is IV
 
 This is a front-end demo with no backend. Open `index.html` in a browser. Data is seeded in the page and saved in the browser's localStorage.
 
-## Demo accounts
+## Demo accounts and roles
 
-All three work for IV Recruitment and use the password `demo`. Each recruiter sees only their own candidates, clients and jobs.
+Every account uses the password `demo`.
 
-| Recruiter | Desk | Email |
+| Person | Role | Desk |
 |---|---|---|
-| Maya Chen | Structural, Civil & Construction, Toronto | maya.chen@ivrecruitment.example |
-| Julien Tremblay | Electrical & Automation, Montréal | julien.tremblay@ivrecruitment.example |
-| Priya Natarajan | Energy & Geotechnical, Calgary | priya.natarajan@ivrecruitment.example |
+| Sarah Lin | Admin | Operations & Systems, Toronto |
+| David Ross | Manager | Head of Engineering Recruitment, Toronto |
+| Maya Chen | Recruiter | Structural, Civil & Construction, Toronto |
+| Julien Tremblay | Recruiter | Electrical & Automation, Montréal |
+| Priya Natarajan | Recruiter | Energy & Geotechnical, Calgary |
+
+| Action | Admin | Manager | Recruiter |
+|---|---|---|---|
+| See and search every recruiter's candidates | ✓ | ✓ | |
+| Upload résumés and keep their own candidates | ✓ | ✓ | ✓ |
+| Edit a candidate record (owner only) | ✓ | ✓ | ✓ |
+| Move candidates through the pipeline | ✓ | ✓ | ✓ |
+| Add and edit clients | ✓ | ✓ | |
+| Create jobs, change job status, assign recruiters | ✓ | ✓ | |
+| Add users and change roles | ✓ | | |
+
+Recruiters see only their own candidates and the jobs assigned to them. A client appears for a recruiter once they have a job with that client.
+
+## Pipeline
+
+A pipeline entry is one candidate in one job, with a stage (Sourced, Contacted, Submitted, Interview, Offer, Placed, or Not a fit), the date it entered that stage and the full stage history. The same entries appear in three places:
+
+- **Pipeline board**: columns by stage. A recruiter sees their own candidates; a manager sees the whole team and can filter by recruiter or job. Cards stuck in a stage for more than 14 days are flagged.
+- **Job page**: everyone in that job's pipeline.
+- **Candidate profile**: every job the candidate is in, with a stage track and history.
 
 ## What the demo does
 

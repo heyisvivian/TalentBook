@@ -72,6 +72,29 @@ button { cursor: pointer; }
 a.btn { text-decoration: none; color: inherit; }
 .linkish { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; font: inherit; text-align: left; }
 .resume-sheet { background: var(--surface-2); border-radius: 10px; padding: 18px 20px; white-space: pre-wrap; font-size: .88rem; line-height: 1.6; max-height: 60vh; overflow: auto; overflow-wrap: anywhere; }
+.chip.role-admin { background: var(--bad-soft); color: var(--bad); }
+.chip.role-manager { background: var(--warn-soft); color: var(--warn); }
+.chip.role-recruiter { background: var(--accent-soft); color: var(--accent); }
+.avatar.xs { width: 22px; height: 22px; font-size: .62rem; }
+.stage-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.stage-cell { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 10px; text-align: left; display: grid; gap: 0; }
+.stage-cell:hover { border-color: var(--accent); }
+.stage-cell b { font-family: var(--f-display); font-size: 1.3rem; }
+.stage-cell span { font-size: .76rem; color: var(--muted); }
+.board-wrap { overflow-x: auto; padding-bottom: 6px; }
+.board { display: grid; grid-template-columns: repeat(6, minmax(160px, 1fr)); gap: 8px; min-width: 1010px; align-items: start; }
+.col { background: var(--surface-2); border-radius: var(--r); padding: 8px; display: grid; gap: 8px; align-content: start; min-height: 120px; }
+.col-head { display: flex; justify-content: space-between; font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 2px 4px; }
+.pcard { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; display: grid; gap: 4px; min-width: 0; }
+.pcard.stale { border-left: 3px solid var(--warn); }
+.pcard .linkish { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.input.mini { width: auto; padding: 2px 6px; font-size: .76rem; border-radius: 6px; }
+.app { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; }
+.track { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.track i { height: 5px; border-radius: 3px; background: var(--surface-2); }
+.track i.on { background: var(--accent); }
+.track i.lost { background: var(--bad-soft); }
+@media (max-width: 700px) { .stage-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .field { display: grid; gap: 4px; min-width: 0; }
 .field label { font-size: .78rem; font-weight: 600; color: var(--muted); }
@@ -133,6 +156,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .topbar .input { padding-left: 34px; height: 38px; }
 .topbar form svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); }
 .content { padding-block: 22px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; max-width: 1240px; width: 100%; }
+.content > * { min-width: 0; }
 .page-head { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
 .page-head > div { min-width: 0; }
 .page-head p { color: var(--muted); margin-top: 4px; }
@@ -259,7 +283,7 @@ button.card:hover { border-color: var(--accent); }
    stand in for a backend and an LLM. Data is kept in localStorage.
    ========================================================================= */
 
-const STORE_KEY = "talentbook-demo-v4";
+const STORE_KEY = "talentbook-demo-v5";
 const TODAY = new Date(); TODAY.setHours(12, 0, 0, 0);
 const DAY = 86400000;
 const ago = n => new Date(TODAY - n * DAY).toISOString().slice(0, 10);
@@ -269,11 +293,13 @@ const uid = p => p + Math.random().toString(36).slice(2, 9);
 
 /* ---------------- seed data ---------------- */
 function seed() {
-  const company = { name: "IV Recruitment", short: "IV Recruitment", tagline: "Engineering recruitment across Canada", hq: "Toronto, ON" };
+  const company = { name: "IV Recruitment", short: "IV Recruitment", tagline: "Engineering recruitment across Canada", hq: "Toronto, ON", licence: "ON recruiter licence RL-2024-0418" };
   const recruiters = [
-    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Structural, Civil & Construction · Toronto", email: "maya.chen@ivrecruitment.example", licence: "ON recruiter licence RL-2024-0418" },
-    { id: "r2", name: "Julien Tremblay", initials: "JT", desk: "Electrical & Automation · Montréal", email: "julien.tremblay@ivrecruitment.example", licence: "ON recruiter licence RL-2024-0418" },
-    { id: "r3", name: "Priya Natarajan", initials: "PN", desk: "Energy & Geotechnical · Calgary", email: "priya.natarajan@ivrecruitment.example", licence: "ON recruiter licence RL-2024-0418" }
+    { id: "a1", name: "Sarah Lin", initials: "SL", desk: "Operations & Systems · Toronto", email: "sarah.lin@ivrecruitment.example", role: "admin" },
+    { id: "m1", name: "David Ross", initials: "DR", desk: "Head of Engineering Recruitment · Toronto", email: "david.ross@ivrecruitment.example", role: "manager" },
+    { id: "r1", name: "Maya Chen", initials: "MC", desk: "Structural, Civil & Construction · Toronto", email: "maya.chen@ivrecruitment.example", role: "recruiter" },
+    { id: "r2", name: "Julien Tremblay", initials: "JT", desk: "Electrical & Automation · Montréal", email: "julien.tremblay@ivrecruitment.example", role: "recruiter" },
+    { id: "r3", name: "Priya Natarajan", initials: "PN", desk: "Energy & Geotechnical · Calgary", email: "priya.natarajan@ivrecruitment.example", role: "recruiter" }
   ];
   const consent = (d, method, casl, months = 24) => ({ date: ago(d), method, casl, retainUntil: addDays(ago(d), Math.round(months * 30.4)) });
   const S = (n, y) => ({ n, y });
@@ -465,70 +491,81 @@ function seed() {
       consent: consent(50, "Email reply", "Express"), resume: "Jordan_Bell.pdf" }
   ];
   const clients = [
-    { id: "k1", owner: "r1", name: "Lakeshore Structural Group", industry: "Consulting engineering", city: "Toronto", prov: "ON", size: 140,
+    { id: "k1", owner: "m1", name: "Lakeshore Structural Group", industry: "Consulting engineering", city: "Toronto", prov: "ON", size: 140,
       contacts: [{ n: "Priscilla Wong", r: "Director of Engineering", e: "pwong@lakeshore.example" }],
       prefs: ["Must hold P.Eng or be within 6 months of licensure", "Strong preference for high-rise residential experience", "Two-stage interview: technical test, then partner meeting"],
       avoid: ["Job changes under 18 months without a clear reason"], fee: "20% of first-year base", guarantee: "90 days", lastContact: ago(10) },
-    { id: "k2", owner: "r1", name: "Northshore Builders Inc.", industry: "General contractor", city: "Vaughan", prov: "ON", size: 320,
+    { id: "k2", owner: "m1", name: "Northshore Builders Inc.", industry: "General contractor", city: "Vaughan", prov: "ON", size: 320,
       contacts: [{ n: "Dev Patel", r: "VP Construction", e: "dpatel@northshore.example" }],
       prefs: ["Ask about safety record, COR and Working at Heights", "PMs must have delivered a mid-rise from excavation to occupancy"],
       avoid: ["Owner-side PMs with no site experience"], fee: "18% of first-year base", guarantee: "60 days", lastContact: ago(22) },
-    { id: "k3", owner: "r1", name: "Greenfield MEP Consultants", industry: "Mechanical & electrical engineering", city: "Markham", prov: "ON", size: 60,
+    { id: "k3", owner: "m1", name: "Greenfield MEP Consultants", industry: "Mechanical & electrical engineering", city: "Markham", prov: "ON", size: 60,
       contacts: [{ n: "Laura Smith", r: "HR Manager", e: "lsmith@greenfieldmep.example" }],
       prefs: ["Revit MEP is mandatory", "Open to EITs; offers a P.Eng mentorship plan", "Hybrid, 3 days in Markham office"],
       avoid: [], fee: "18% of first-year base", guarantee: "90 days", lastContact: ago(5) },
-    { id: "k4", owner: "r2", name: "Hydro-Laurentide Industriel", industry: "Utilities & automation", city: "Montréal", prov: "QC", size: 900,
+    { id: "k4", owner: "m1", name: "Hydro-Laurentide Industriel", industry: "Utilities & automation", city: "Montréal", prov: "QC", size: 900,
       contacts: [{ n: "Isabelle Fortin", r: "Conseillère en acquisition de talents", e: "ifortin@hlaurentide.example" }],
       prefs: ["French is the working language (Charter of the French Language)", "OIQ membership required for any 'engineer' title", "Max 20% travel"],
       avoid: [], fee: "22% of first-year base", guarantee: "120 days", lastContact: ago(14) },
-    { id: "k5", owner: "r2", name: "Ateliers Saint-Laurent", industry: "Manufacturing", city: "Sherbrooke", prov: "QC", size: 85,
+    { id: "k5", owner: "m1", name: "Ateliers Saint-Laurent", industry: "Manufacturing", city: "Sherbrooke", prov: "QC", size: 85,
       contacts: [{ n: "Marc Bouchard", r: "Directeur d'usine", e: "mbouchard@asl.example" }],
       prefs: ["Contract designers through agency, 6-month minimum", "Bilingual drawings and documentation"],
       avoid: [], fee: "Bill rate = pay rate × 1.35", guarantee: "Replacement within 2 weeks", lastContact: ago(30) },
-    { id: "k6", owner: "r3", name: "Coastline Geotechnical Ltd.", industry: "Geotechnical engineering", city: "Vancouver", prov: "BC", size: 75,
+    { id: "k6", owner: "m1", name: "Coastline Geotechnical Ltd.", industry: "Geotechnical engineering", city: "Vancouver", prov: "BC", size: 75,
       contacts: [{ n: "Sam Reyes", r: "Principal", e: "sam@coastlinegeo.example" }],
       prefs: ["EGBC registration required for any engineer title", "About 30% field time; valid driver's licence needed", "Two interviews, the second with a principal"],
       avoid: ["Candidates with no field investigation experience"], fee: "20% of first-year base", guarantee: "90 days", lastContact: ago(9) },
-    { id: "k7", owner: "r3", name: "Prairie Energy Systems", industry: "Energy", city: "Calgary", prov: "AB", size: 450,
+    { id: "k7", owner: "m1", name: "Prairie Energy Systems", industry: "Energy", city: "Calgary", prov: "AB", size: 450,
       contacts: [{ n: "Tom Hughes", r: "Engineering Manager", e: "thughes@prairie.example" }],
       prefs: ["APEGA registration for engineering roles", "Field visits about 25% of the time"],
       avoid: [], fee: "20% of first-year base", guarantee: "90 days", lastContact: ago(41) }
   ];
   const AI = "We use AI-assisted tools to help screen and match applications. A recruiter reviews every application.";
   const jobs = [
-    { id: "j1", owner: "r1", client: "k1", title: "Intermediate Structural Engineer", city: "Toronto", prov: "ON", modes: ["Hybrid"], type: "Permanent",
+    { id: "j1", recruiters: ["r1"], manager: "m1", client: "k1", title: "Intermediate Structural Engineer", city: "Toronto", prov: "ON", modes: ["Hybrid"], type: "Permanent",
       salary: { min: 105000, max: 125000, type: "annual" }, must: ["ETABS", "Revit", "Concrete design (CSA A23.3)"], nice: ["SAFE", "Steel design (CSA S16)"], designations: ["P.Eng"], langs: [],
       status: "Open", opened: ago(21), posting: { ai: AI, vacancy: "existing", fr: false, text: "Design of high-rise residential towers in the GTA. P.Eng required." },
-      pipeline: [{ c: "c1", stage: "Submitted" }] },
-    { id: "j2", owner: "r1", client: "k2", title: "Senior Project Manager, Mid-rise Residential", city: "Vaughan", prov: "ON", modes: ["On-site"], type: "Permanent",
+      pipeline: [] /*j1*/ },
+    { id: "j2", recruiters: ["r1"], manager: "m1", client: "k2", title: "Senior Project Manager, Mid-rise Residential", city: "Vaughan", prov: "ON", modes: ["On-site"], type: "Permanent",
       salary: { min: 130000, max: 165000, type: "annual" }, must: ["Procore", "Primavera P6", "Contract administration (CCDC)", "Cost control"], nice: ["Scheduling"], designations: [], langs: [],
       status: "Open", opened: ago(35), posting: { ai: "", vacancy: "existing", fr: false, text: "Lead 8–12 storey residential projects from excavation to occupancy." },
       pipeline: [] },
-    { id: "j3", owner: "r1", client: "k3", title: "Electrical Designer / EIT", city: "Markham", prov: "ON", modes: ["Hybrid"], type: "Permanent",
+    { id: "j3", recruiters: ["r1"], manager: "m1", client: "k3", title: "Electrical Designer / EIT", city: "Markham", prov: "ON", modes: ["Hybrid"], type: "Permanent",
       salary: { min: 80000, max: 140000, type: "annual" }, must: ["Revit MEP", "Power distribution design", "Canadian Electrical Code (CEC)"], nice: ["ETAP"], designations: [], langs: [],
       status: "Open", opened: ago(12), posting: { ai: AI, vacancy: "", fr: false, text: "Electrical design for healthcare projects. Canadian experience required." },
-      pipeline: [{ c: "c3", stage: "Contacted" }] },
-    { id: "j4", owner: "r1", client: "k3", title: "Mechanical (HVAC) Engineer", city: "Markham", prov: "ON", modes: ["Hybrid"], type: "Permanent",
+      pipeline: [] /*j3*/ },
+    { id: "j4", recruiters: ["r1"], manager: "m1", client: "k3", title: "Mechanical (HVAC) Engineer", city: "Markham", prov: "ON", modes: ["Hybrid"], type: "Permanent",
       salary: { min: 105000, max: 125000, type: "annual" }, must: ["Revit MEP", "ASHRAE 90.1", "Energy modelling"], nice: ["HAP (Carrier)"], designations: ["P.Eng"], langs: [],
       status: "Open", opened: ago(4), posting: { ai: AI, vacancy: "existing", fr: false, text: "Institutional HVAC design (schools, long-term care)." },
       pipeline: [] },
-    { id: "j5", owner: "r2", client: "k4", title: "Ingénieur(e) en automatisation", city: "Montréal", prov: "QC", modes: ["Hybrid"], type: "Permanent",
+    { id: "j5", recruiters: ["r2"], manager: "m1", client: "k4", title: "Ingénieur(e) en automatisation", city: "Montréal", prov: "QC", modes: ["Hybrid"], type: "Permanent",
       salary: { min: 105000, max: 130000, type: "annual" }, must: ["PLC", "SCADA"], nice: ["Power distribution design"], designations: ["ing. (OIQ)"], langs: ["French"],
       status: "Open", opened: ago(18), posting: { ai: AI, vacancy: "existing", fr: true, text: "Automatisation de postes et centrales. Membre de l'OIQ requis." },
-      pipeline: [{ c: "c9", stage: "Interview" }] },
-    { id: "j6", owner: "r2", client: "k5", title: "Mechanical Designer (6-month contract)", city: "Sherbrooke", prov: "QC", modes: ["On-site"], type: "Contract",
+      pipeline: [] /*j5*/ },
+    { id: "j6", recruiters: ["r2"], manager: "m1", client: "k5", title: "Mechanical Designer (6-month contract)", city: "Sherbrooke", prov: "QC", modes: ["On-site"], type: "Contract",
       salary: { min: 34, max: 40, type: "hourly" }, must: ["SolidWorks", "GD&T"], nice: ["Inventor"], designations: [], langs: [],
       status: "Open", opened: ago(6), posting: { ai: "", vacancy: "existing", fr: false, text: "Conception de gabarits et outillage. Contrat de 6 mois." },
       pipeline: [] },
-    { id: "j7", owner: "r3", client: "k6", title: "Senior Geotechnical Engineer", city: "Vancouver", prov: "BC", modes: ["Hybrid"], type: "Permanent",
+    { id: "j7", recruiters: ["r3"], manager: "m1", client: "k6", title: "Senior Geotechnical Engineer", city: "Vancouver", prov: "BC", modes: ["Hybrid"], type: "Permanent",
       salary: { min: 130000, max: 155000, type: "annual" }, must: ["Foundation design", "Slope stability (Slide2)", "Site investigation"], nice: ["gINT"], designations: ["P.Eng"], langs: [],
       status: "Open", opened: ago(16), posting: { ai: AI, vacancy: "existing", fr: false, text: "Foundations and slope stability for Metro Vancouver infrastructure." },
-      pipeline: [{ c: "c14", stage: "Submitted" }] },
-    { id: "j8", owner: "r3", client: "k7", title: "Controls Engineer", city: "Calgary", prov: "AB", modes: ["On-site", "Hybrid"], type: "Permanent",
+      pipeline: [] /*j7*/ },
+    { id: "j8", recruiters: ["r3"], manager: "m1", client: "k7", title: "Controls Engineer", city: "Calgary", prov: "AB", modes: ["On-site", "Hybrid"], type: "Permanent",
       salary: { min: 120000, max: 145000, type: "annual" }, must: ["PLC", "SCADA"], nice: ["Python", "Instrumentation"], designations: ["P.Eng"], langs: [],
       status: "Open", opened: ago(27), posting: { ai: "", vacancy: "existing", fr: false, text: "Controls for gas processing facilities. 25% field." },
       pipeline: [] }
   ];
+  const P = (c, stage, days) => {
+    const upto = STAGES.indexOf(stage), path = stage === "Not a fit" ? ["Sourced", "Contacted", "Not a fit"] : STAGES.slice(0, upto + 1);
+    const history = path.map((st, i) => ({ stage: st, d: ago(days + (path.length - 1 - i) * 6) }));
+    return { c, stage, by: candidates.find(x => x.id === c).owner, since: ago(days), history };
+  };
+  const seedPipe = {
+    j1: [P("c1", "Interview", 4), P("c6", "Not a fit", 9)], j2: [P("c2", "Contacted", 20), P("c7", "Sourced", 3)],
+    j3: [P("c3", "Submitted", 6)], j4: [P("c8", "Sourced", 2)], j5: [P("c9", "Offer", 2), P("c13", "Contacted", 11)],
+    j6: [P("c12", "Submitted", 3)], j7: [P("c14", "Interview", 9)], j8: [P("c19", "Submitted", 17)]
+  };
+  jobs.forEach(j => { j.pipeline = seedPipe[j.id] || []; });
   candidates.forEach(c => {
     c.linkedin = c.id === "c7" ? "" : `https://www.linkedin.com/in/${norm(c.name).replace(/[^a-z]+/g, "-")}-demo`;
     c.resumeDate = c.consent.date;
@@ -551,7 +588,19 @@ function setMe(id) { me = id; try { id ? sessionStorage.setItem(STORE_KEY + "-me
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const initials = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
-const mine = list => list.filter(x => x.owner === me);
+const ROLE_LABEL = { admin: "Admin", manager: "Manager", recruiter: "Recruiter" };
+const PERMS = {
+  admin: ["viewAll", "addClient", "editClient", "addJob", "editJob", "assign", "manageUsers"],
+  manager: ["viewAll", "addClient", "editClient", "addJob", "editJob", "assign"],
+  recruiter: []
+};
+const role = () => recruiter(me)?.role || "recruiter";
+const can = perm => PERMS[role()].includes(perm);
+const visCands = () => can("viewAll") ? DB.candidates : DB.candidates.filter(c => c.owner === me);
+const visJobs = () => can("viewAll") ? DB.jobs : DB.jobs.filter(j => j.recruiters.includes(me));
+const visClients = () => can("viewAll") ? DB.clients : DB.clients.filter(k => visJobs().some(j => j.client === k.id));
+const recruiterUsers = () => DB.recruiters.filter(u => u.role === "recruiter");
+const firstName = id => (recruiter(id)?.name || "Unassigned").split(" ")[0];
 const recruiter = id => DB.recruiters.find(r => r.id === id);
 const cand = id => DB.candidates.find(c => c.id === id);
 const client = id => DB.clients.find(c => c.id === id);
@@ -582,6 +631,8 @@ const icons = {
   shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>',
   doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" width="16" height="16"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
   linkedin: '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.5h4V21H3zM9.5 9.5h3.8v1.6h.1c.5-1 1.8-2 3.7-2 4 0 4.7 2.6 4.7 6V21h-4v-5.2c0-1.2 0-2.9-1.8-2.9s-2 1.4-2 2.8V21h-4z"/></svg>',
+  flow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg>',
+  key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14 9l2 2"/></svg>',
   upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>'
 };
 
@@ -787,12 +838,12 @@ function postingChecks(j) {
     out.push(["good", "45-day post-interview reply reminder is on for this job"]);
   }
   if (j.prov === "QC") out.push(j.posting.fr ? ["good", "French version of posting (Charter of the French Language)"] : ["warn", "Publish a French version; Québec postings must be available in French"]);
-  if (j.prov === "ON") { const r = recruiter(j.owner); out.push(/ON recruiter licence/.test(r.licence) ? ["good", `Recruiter licensed under Ontario ESA (${r.licence.replace("ON recruiter licence ", "")})`] : ["warn", "Recruiting for Ontario: agency needs an Ontario recruiter licence"]); }
+  if (j.prov === "ON") { const lic = DB.company.licence || ""; out.push(/ON recruiter licence/.test(lic) ? ["good", `Company licensed under Ontario ESA (${lic.replace("ON recruiter licence ", "")})`] : ["warn", "Recruiting for Ontario: the company needs an Ontario recruiter licence"]); }
   return out;
 }
 
 /* ---------------- UI state ---------------- */
-const ui = { view: "home", id: null, query: "", filters: null, candFilter: "all", candText: "", toast: null, modal: null, upload: null };
+const ui = { view: "home", id: null, query: "", filters: null, candFilter: "all", candText: "", candOwner: "all", pipeJob: "all", pipeRec: "all", jobClient: null, toast: null, modal: null, upload: null };
 function go(view, id = null) { ui.view = view; ui.id = id; ui.modal = null; render(); window.scrollTo(0, 0); }
 function toast(msg) { ui.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(() => { ui.toast = null; render(); }, 2400); }
 
@@ -801,14 +852,14 @@ function viewLogin() {
   const sel = ui.loginPick || "r1";
   return `<div class="login"><form class="login-card" id="login-form">
     <div class="brand"><span class="brand-mark">Tb</span>TalentBook</div>
-    <div><span class="eyebrow">${esc(DB.company.tagline)}</span><h1 style="font-size:1.4rem;margin-top:4px">${esc(DB.company.name)}</h1><p class="muted" style="margin-top:4px">Sign in to your desk. Everyone here works for ${esc(DB.company.short)}; each recruiter manages their own candidates, clients and jobs.</p></div>
-    <div class="who" role="group" aria-label="Recruiter">${DB.recruiters.map(r => `
-      <button type="button" data-pick="${r.id}" aria-pressed="${r.id === sel}"><span class="avatar">${r.initials}</span><span><strong>${esc(r.name)}</strong><br><span class="muted" style="font-size:.8rem">${esc(r.desk)}</span></span></button>`).join("")}</div>
+    <div><span class="eyebrow">${esc(DB.company.tagline)}</span><h1 style="font-size:1.4rem;margin-top:4px">${esc(DB.company.name)}</h1><p class="muted" style="margin-top:4px">Sign in to your desk. Everyone here works for ${esc(DB.company.short)}. What you can do depends on your role.</p></div>
+    <div class="who" role="group" aria-label="Account">${DB.recruiters.map(r => `
+      <button type="button" data-pick="${r.id}" aria-pressed="${r.id === sel}"><span class="avatar">${r.initials}</span><span style="flex:1;min-width:0"><strong>${esc(r.name)}</strong><br><span class="muted" style="font-size:.8rem">${esc(r.desk)}</span></span><span class="chip role-${r.role}">${ROLE_LABEL[r.role]}</span></button>`).join("")}</div>
     <div class="field"><label for="login-email">Email</label><input class="input" id="login-email" value="${esc(recruiter(sel).email)}" autocomplete="username"></div>
     <div class="field"><label for="login-pw">Password</label><input class="input" id="login-pw" type="password" value="demo" autocomplete="current-password"></div>
     ${ui.loginErr ? `<p class="err">${esc(ui.loginErr)}</p>` : ""}
     <button class="btn primary" style="justify-content:center;height:42px">Sign in</button>
-    <p class="demo-note">Demo accounts. Password for all three is <span class="num">demo</span>. Data stays in this browser.</p>
+    <p class="demo-note">Demo accounts. Password for every account is <span class="num">demo</span>. Data stays in this browser.</p>
   </form></div>`;
 }
 function navBtn(view, label, icon, count) {
@@ -821,12 +872,14 @@ function shell(inner) {
     <nav class="rail" aria-label="Main">
       <div class="brand"><span class="brand-mark">Tb</span><span>TalentBook<span class="company">${esc(DB.company.name)}</span></span></div>
       ${navBtn("home", "Ask", "search")}
-      ${navBtn("candidates", "Candidates", "people", mine(DB.candidates).length)}
-      ${navBtn("jobs", "Jobs", "brief", mine(DB.jobs).filter(j => j.status === "Open").length)}
-      ${navBtn("clients", "Clients", "building", mine(DB.clients).length)}
+      ${navBtn("pipeline", "Pipeline", "flow", pipeEntries().filter(x => !["Placed", "Not a fit"].includes(x.p.stage)).length)}
+      ${navBtn("candidates", "Candidates", "people", visCands().length)}
+      ${navBtn("jobs", "Jobs", "brief", visJobs().filter(j => j.status === "Open").length)}
+      ${navBtn("clients", "Clients", "building", visClients().length)}
       ${navBtn("compliance", "Compliance", "shield")}
+      ${can("manageUsers") ? navBtn("team", "Team & roles", "key") : ""}
       <div class="rail-foot">
-        <div class="me"><span class="avatar">${r.initials}</span><div><strong>${esc(r.name)}</strong><span>${esc(r.desk.split(" · ")[0])}</span></div></div>
+        <div class="me"><span class="avatar">${r.initials}</span><div><strong>${esc(r.name)}</strong><span>${ROLE_LABEL[r.role]} · ${esc(r.desk.split(" · ").at(-1))}</span></div></div>
         <button class="btn ghost sm" data-act="logout">Sign out</button>
       </div>
     </nav>
@@ -845,7 +898,7 @@ function candRow(c, extra = {}) {
   return `<button class="cand" data-open="${c.id}">
     <span class="avatar">${initials(c.name)}</span>
     <span class="cand-main">
-      <span class="row" style="gap:8px"><span class="cand-name">${esc(c.name)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}</span>
+      <span class="row" style="gap:8px"><span class="cand-name">${esc(c.name)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}${c.owner !== me ? `<span class="chip">${esc(firstName(c.owner))}'s desk</span>` : ""}</span>
       <span class="cand-meta"><span>${esc(c.title)}</span><span>${esc(c.city)}, ${c.prov}</span><span>${c.years} yrs</span><span>${c.modes.join(" / ")}</span></span>
       <span class="chips">${c.skills.slice(0, 6).map(s => `<span class="chip ${extra.hits?.includes(s.n) ? "hit" : ""}">${esc(s.n)}</span>`).join("")}</span>
       ${extra.why?.length ? `<span class="why">${esc(extra.why.join(" · "))}</span>` : ""}
@@ -859,10 +912,10 @@ function candRow(c, extra = {}) {
 }
 
 function viewHome() {
-  const cs = mine(DB.candidates);
+  const cs = visCands();
   const follow = cs.filter(c => recency(c).days >= 60 && c.status !== "Placed").sort((a, b) => recency(b).days - recency(a).days);
   const consentIssues = cs.filter(c => consentState(c).cls !== "good");
-  const openJobs = mine(DB.jobs).filter(j => j.status === "Open");
+  const openJobs = visJobs().filter(j => j.status === "Open");
   const r = recruiter(me);
   let results = "";
   if (ui.filters) {
@@ -877,13 +930,14 @@ function viewHome() {
     r1: ["P.Eng structural engineers in the GTA under 130k", "Candidates not contacted in 3 months", "Revit MEP designers open to hybrid", "Bilingual civil engineers in Ontario"],
     r2: ["Bilingual project managers in Greater Montréal", "Engineers with PLC and SCADA, no LMIA", "Mechanical designers in Quebec", "Candidates not contacted in 2 months"],
     r3: ["P.Eng engineers in Alberta over 120k", "Geotechnical engineers in the Lower Mainland", "Controls engineers willing to relocate", "Candidates not contacted in 2 months"]
-  }[me] || [];
+  }[me] || ["P.Eng engineers in Ontario", "Bilingual engineers in Quebec", "Engineers willing to relocate", "Candidates not contacted in 3 months"];
+  const pe = pipeEntries(), active = STAGES.slice(0, 6);
   return `
     <div class="page-head"><div><h1>Good ${TODAY.getHours() < 12 ? "morning" : "afternoon"}, ${esc(r.name.split(" ")[0])}</h1><p>${fmtDate(TODAY.toISOString().slice(0, 10))} · ${esc(r.desk)}</p></div></div>
     <div class="stats">
-      <button class="stat" data-go="candidates"><b>${cs.length}</b><span>Candidates on your desk</span></button>
+      <button class="stat" data-go="candidates"><b>${cs.length}</b><span>${can("viewAll") ? "Candidates across the team" : "Candidates on your desk"}</span></button>
       <button class="stat" data-q="Candidates not contacted in 2 months"><b style="color:var(--warn)">${follow.length}</b><span>Need a follow-up (60+ days)</span></button>
-      <button class="stat" data-go="jobs"><b>${openJobs.length}</b><span>Open jobs</span></button>
+      <button class="stat" data-go="pipeline"><b>${pe.filter(x => active.includes(x.p.stage) && x.p.stage !== "Placed").length}</b><span>Candidates in active pipelines</span></button>
       <button class="stat" data-go="compliance"><b style="color:${consentIssues.length ? "var(--bad)" : "var(--good)"}">${consentIssues.length}</b><span>Consent or retention to fix</span></button>
     </div>
     <section class="ask">
@@ -891,47 +945,53 @@ function viewHome() {
       <form id="ask-form"><input class="input" id="ask-q" value="${esc(ui.query)}" placeholder="e.g. Structural engineers with P.Eng in the GTA under 130k" aria-label="Describe the candidate you are looking for"><button class="btn primary">Search</button></form>
       ${ui.filters ? `<div class="understood"><span class="eyebrow">Understood as</span>${ui.filters.labels.length ? ui.filters.labels.map(([k, l]) => `<span class="chip hit">${esc(l)}<button data-drop="${esc(k)}" aria-label="Remove ${esc(l)}">×</button></span>`).join("") : `<span class="muted">No filters recognised; showing everyone.</span>`}</div>`
         : `<div class="chips">${examples.map(e => `<button class="chip outline" data-q="${esc(e)}">${esc(e)}</button>`).join("")}</div>`}
-      <p class="demo-note">Demo: the query is read by a rule-based parser in your browser to simulate the AI assistant. Results only include candidates you own.</p>
+      <p class="demo-note">Demo: the query is read by a rule-based parser in your browser to simulate the AI assistant. ${can("viewAll") ? "Results include every recruiter's candidates." : "Results only include candidates you own."}</p>
     </section>
     ${results}
-    ${!ui.filters ? `<div class="two">
+    ${!ui.filters ? `<section class="panel"><div class="panel-head"><h2>${can("viewAll") ? "Team pipeline" : "My pipeline"}</h2><span class="spacer"></span><button class="btn sm" data-go="pipeline">Open board</button></div>
+      <div class="stage-strip">${active.map(st => { const n = pe.filter(x => x.p.stage === st).length; return `<button class="stage-cell" data-go="pipeline"><b>${n}</b><span>${st}</span></button>`; }).join("")}</div>
+      ${pe.filter(stuck).length ? `<p class="why" style="margin-top:10px;color:var(--warn)">${pe.filter(stuck).length} candidate${pe.filter(stuck).length === 1 ? " has" : "s have"} been in the same stage for more than 14 days.</p>` : ""}</section>
+    <div class="two">
       <section class="panel"><div class="panel-head"><h2>Follow-up queue</h2><span class="muted" style="font-size:.82rem">Longest silence first</span></div>
         <div class="list">${follow.length ? follow.slice(0, 5).map(c => candRow(c)).join("") : `<div class="empty">Everyone has heard from you in the last 60 days.</div>`}</div></section>
-      <section class="panel"><div class="panel-head"><h2>Open jobs</h2></div>
-        <div class="list">${openJobs.map(j => { const top = mine(DB.candidates).map(c => matchScore(c, j).total).sort((a, b) => b - a)[0] || 0;
+      <section class="panel"><div class="panel-head"><h2>${can("viewAll") ? "Open jobs" : "Jobs assigned to you"}</h2></div>
+        <div class="list">${openJobs.map(j => { const top = visCands().map(c => matchScore(c, j).total).sort((a, b) => b - a)[0] || 0;
           return `<button class="card" data-job="${j.id}"><span class="row"><strong>${esc(j.title)}</strong></span><span class="muted" style="font-size:.82rem">${esc(client(j.client).name)} · ${esc(j.city)}, ${j.prov} · <span class="num">${fmtPay(j.salary)}</span></span><span class="row" style="font-size:.8rem"><span class="bar"><i style="width:${top}%"></i></span>Best match ${top}</span></button>`; }).join("")}</div></section>
     </div>` : ""}`;
 }
 
 function viewCandidates() {
-  let cs = mine(DB.candidates);
+  let cs = visCands();
+  if (can("viewAll") && ui.candOwner !== "all") cs = cs.filter(c => c.owner === ui.candOwner);
   if (ui.candFilter === "follow") cs = cs.filter(c => recency(c).days >= 60);
   else if (ui.candFilter !== "all") cs = cs.filter(c => c.status === ui.candFilter);
   if (ui.candText) { const q = norm(ui.candText); cs = cs.filter(c => norm([c.name, c.title, c.city, ...c.skills.map(s => s.n)].join(" ")).includes(q)); }
   cs.sort((a, b) => recency(a).days - recency(b).days);
   const tabs = [["all", "All"], ["Active", "Active"], ["Passive", "Passive"], ["follow", "Follow-up due"]];
-  return `<div class="page-head"><div><h1>My candidates</h1><p>Sorted by most recent contact. Only you can see and edit these records.</p></div><span class="spacer"></span><button class="btn primary" data-act="upload">${icons.upload}Upload résumé</button></div>
+  return `<div class="page-head"><div><h1>${can("viewAll") ? "Team candidates" : "My candidates"}</h1><p>${can("viewAll") ? "Every recruiter's candidates, sorted by most recent contact. Only the owner edits a record." : "Sorted by most recent contact. Only you and your managers can see these records."}</p></div><span class="spacer"></span><button class="btn primary" data-act="upload">${icons.upload}Upload résumé</button></div>
     <div class="row">
       ${tabs.map(([k, l]) => `<button class="btn sm ${ui.candFilter === k ? "primary" : ""}" data-cf="${k}">${l}</button>`).join("")}
       <span class="spacer"></span>
+      ${can("viewAll") ? `<select class="input" id="cand-owner" style="width:auto" aria-label="Recruiter"><option value="all">All recruiters</option>${DB.recruiters.filter(u => DB.candidates.some(c => c.owner === u.id)).map(u => `<option value="${u.id}" ${ui.candOwner === u.id ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select>` : ""}
       <input class="input" id="cand-filter" style="max-width:260px" placeholder="Filter by name, skill or city" value="${esc(ui.candText)}" aria-label="Filter candidates">
     </div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Candidate</th><th>Location</th><th>Last contact</th><th>Expected pay</th><th>Work mode</th><th>Top skills</th><th>Privacy</th></tr></thead>
+      <thead><tr><th>Candidate</th>${can("viewAll") ? "<th>Recruiter</th>" : ""}<th>Location</th><th>Last contact</th><th>Expected pay</th><th>Work mode</th><th>Top skills</th><th>Privacy</th></tr></thead>
       <tbody>${cs.map(c => { const r = recency(c), k = consentState(c); return `<tr class="click" data-open="${c.id}">
         <td><strong>${esc(c.name)}</strong><br><span class="muted">${esc(c.title)}</span></td>
+        ${can("viewAll") ? `<td>${esc(recruiter(c.owner)?.name || "—")}</td>` : ""}
         <td>${esc(c.city)}, ${c.prov}</td>
         <td><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="dot ${r.cls}"></span><span style="white-space:nowrap">${r.label}</span></span></td>
         <td class="num" style="white-space:nowrap">${fmtPay(c.salary)}</td>
         <td>${c.modes.join(" / ")}${c.relocate ? "<br><span class='muted'>Will relocate</span>" : ""}</td>
         <td><span class="chips">${c.skills.slice(0, 3).map(s => `<span class="chip">${esc(s.n)}</span>`).join("")}</span></td>
-        <td><span class="chip ${k.cls}">${k.label}</span></td></tr>`; }).join("") || `<tr><td colspan="7"><div class="empty">No candidates match this filter.</div></td></tr>`}</tbody>
+        <td><span class="chip ${k.cls}">${k.label}</span></td></tr>`; }).join("") || `<tr><td colspan="8"><div class="empty">No candidates match this filter.</div></td></tr>`}</tbody>
     </table></div>`;
 }
 
 function aiSummary(c) {
   const r = recency(c), lc = c.comms.slice().sort((a, b) => b.d.localeCompare(a.d))[0];
-  const best = mine(DB.jobs).filter(j => j.status === "Open").map(j => ({ j, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total)[0];
+  const best = visJobs().filter(j => j.status === "Open").map(j => ({ j, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total)[0];
   const first = c.name.split(" ")[0];
   const desig = c.designations.filter(d => !c.title.includes(d.split(" ")[0]));
   return `${esc(first)} is ${/^[aeiou]/i.test(c.title) ? "an" : "a"} ${esc(c.title)}${desig.length ? ` (${esc(desig.join(", "))})` : ""} in ${esc(c.city)} with ${c.years} years' experience, strongest in ${esc(c.skills.slice(0, 3).map(s => s.n).join(", "))}. `
@@ -943,30 +1003,31 @@ function aiSummary(c) {
 
 function viewCandidate() {
   const c = cand(ui.id);
-  if (!c || c.owner !== me) return `<div class="empty">This candidate belongs to another recruiter's desk.</div>`;
-  const r = recency(c), k = consentState(c);
-  const matches = mine(DB.jobs).filter(j => j.status === "Open").map(j => ({ j, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total);
+  if (!c || !visCands().includes(c)) return `<div class="empty">This candidate belongs to another recruiter's desk.</div>`;
+  const r = recency(c), k = consentState(c), ed = c.owner === me;
+  const apps = DB.jobs.flatMap(j => j.pipeline.filter(p => p.c === c.id).map((p, i) => ({ j, p, i: j.pipeline.indexOf(p) })));
+  const matches = visJobs().filter(j => j.status === "Open").map(j => ({ j, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total);
   const comms = c.comms.slice().sort((a, b) => b.d.localeCompare(a.d));
   const memory = c.memory.slice().sort((a, b) => b.d.localeCompare(a.d));
   const maxY = Math.max(...c.skills.map(s => s.y), 1);
   return `
-    <div><button class="btn ghost sm" data-go="candidates">← My candidates</button></div>
+    <div><button class="btn ghost sm" data-go="candidates">← ${can("viewAll") ? "Team candidates" : "My candidates"}</button></div>
     <div class="profile-head">
       <span class="avatar lg">${initials(c.name)}</span>
       <div style="min-width:0"><h1>${esc(c.name)}</h1><p class="muted">${esc(c.title)} · ${esc(c.city)}, ${c.prov} · ${c.years} years</p>
-        <div class="row" style="margin-top:6px"><span class="chip ${r.cls}"><span class="dot ${r.cls}"></span>Last contact ${r.label.toLowerCase()}</span><span class="chip">${esc(c.status)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}<span class="chip ${k.cls}">${k.label}</span></div></div>
-      <div class="row"><select class="input" id="status-sel" style="width:auto" aria-label="Candidate status">${["Active", "Passive", "Placed", "Do not contact"].map(s => `<option ${s === c.status ? "selected" : ""}>${s}</option>`).join("")}</select><button class="btn primary" data-act="log">Log contact</button></div>
+        <div class="row" style="margin-top:6px"><span class="chip ${r.cls}"><span class="dot ${r.cls}"></span>Last contact ${r.label.toLowerCase()}</span><span class="chip">${esc(c.status)}</span>${c.designations.map(d => `<span class="chip outline">${esc(d)}</span>`).join("")}<span class="chip ${k.cls}">${k.label}</span>${ed ? "" : `<span class="chip warn">${esc(firstName(c.owner))}'s candidate · view only</span>`}</div></div>
+      ${!ed ? "" : `<div class="row"><select class="input" id="status-sel" style="width:auto" aria-label="Candidate status">${["Active", "Passive", "Placed", "Do not contact"].map(s => `<option ${s === c.status ? "selected" : ""}>${s}</option>`).join("")}</select><button class="btn primary" data-act="log">Log contact</button></div>`}
     </div>
     <div class="row">
       <button class="btn" data-act="view-resume">${icons.doc}View résumé</button>
-      ${c.linkedin ? `<a class="btn" href="${esc(c.linkedin)}" target="_blank" rel="noopener noreferrer">${icons.linkedin}LinkedIn profile ↗</a>` : `<button class="btn" data-act="edit-linkedin">${icons.linkedin}Add LinkedIn</button>`}
-      ${c.linkedin ? `<button class="btn ghost sm" data-act="edit-linkedin">Edit link</button>` : ""}
+      ${c.linkedin ? `<a class="btn" href="${esc(c.linkedin)}" target="_blank" rel="noopener noreferrer">${icons.linkedin}LinkedIn profile ↗</a>` : (ed ? `<button class="btn" data-act="edit-linkedin">${icons.linkedin}Add LinkedIn</button>` : "")}
+      ${c.linkedin && ed ? `<button class="btn ghost sm" data-act="edit-linkedin">Edit link</button>` : ""}
     </div>
     ${ui.modal === "linkedin" ? `<form id="li-form" class="row"><input class="input" id="li-url" style="flex:1;min-width:220px" placeholder="https://www.linkedin.com/in/name" value="${esc(c.linkedin)}" aria-label="LinkedIn profile URL"><button class="btn primary sm">Save link</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button>${ui.liErr ? `<span class="err">${esc(ui.liErr)}</span>` : ""}</form>` : ""}
     <div class="summary"><span class="eyebrow">AI summary</span><p>${aiSummary(c)}</p></div>
     <div class="two">
       <div class="stack">
-        <section class="panel"><div class="panel-head"><h2>Memory cards</h2><span class="muted" style="font-size:.82rem">Things to remember before the next call</span><span class="spacer"></span><button class="btn sm" data-act="add-memo">Add card</button></div>
+        <section class="panel"><div class="panel-head"><h2>Memory cards</h2><span class="muted" style="font-size:.82rem">Things to remember before the next call</span><span class="spacer"></span>${ed ? `<button class="btn sm" data-act="add-memo">Add card</button>` : ""}</div>
           ${ui.modal === "memo" ? `<form id="memo-form" class="stack" style="margin-bottom:12px"><div class="form-grid"><div class="field"><label for="memo-tag">Type</label><select class="input" id="memo-tag">${["Preference", "Compensation", "Pain point", "Work authorization", "Client feedback", "Personal"].map(t => `<option>${t}</option>`).join("")}</select></div><div class="field full"><label for="memo-text">Note</label><textarea class="input" id="memo-text" required placeholder="e.g. Wants to avoid downtown commute"></textarea></div></div><div class="row"><button class="btn primary sm">Save card</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button></div><p class="demo-note">Do not record age, health, family status or other protected grounds unless the candidate offered it and it matters to the job.</p></form>` : ""}
           <div class="memory-grid">${memory.map(m => `<div class="memo"><div class="memo-top"><span class="chip">${esc(m.tag)}</span><span>${fmtDate(m.d)}</span></div><p>${esc(m.t)}</p></div>`).join("") || `<div class="empty">No memory cards yet.</div>`}</div>
         </section>
@@ -974,7 +1035,7 @@ function viewCandidate() {
           <section class="panel"><h2>Pain points</h2><ul class="pain">${c.pains.map(p => `<li>${esc(p)}</li>`).join("") || "<li>None recorded</li>"}</ul></section>
           <section class="panel"><h2>What would make them move</h2><ul class="pain moti">${c.motives.map(p => `<li>${esc(p)}</li>`).join("") || "<li>None recorded</li>"}</ul></section>
         </div>
-        <section class="panel"><div class="panel-head"><h2>Communication history</h2><span class="spacer"></span><button class="btn sm" data-act="log">Log contact</button></div>
+        <section class="panel"><div class="panel-head"><h2>Communication history</h2><span class="spacer"></span>${ed ? `<button class="btn sm" data-act="log">Log contact</button>` : ""}</div>
           ${ui.modal === "log" ? `<form id="log-form" class="stack" style="margin-bottom:14px"><div class="form-grid"><div class="field"><label for="log-type">Channel</label><select class="input" id="log-type">${["Call", "Email", "Meeting", "LinkedIn", "SMS"].map(t => `<option>${t}</option>`).join("")}</select></div><div class="field"><label for="log-date">Date</label><input class="input" type="date" id="log-date" value="${TODAY.toISOString().slice(0, 10)}"></div><div class="field full"><label for="log-text">Summary</label><textarea class="input" id="log-text" required placeholder="What did you discuss? Any change in salary, availability or interest?"></textarea></div></div><label class="row" style="font-size:.85rem"><input type="checkbox" id="log-memo"> Also save as a memory card</label><div class="row"><button class="btn primary sm">Save</button><button type="button" class="btn ghost sm" data-act="close">Cancel</button></div>${c.consent?.casl !== "Express" ? `<p class="notice warn">CASL: only implied consent for electronic messages. Ask for express consent before sending job alerts by email or SMS.</p>` : ""}</form>` : ""}
           <div class="timeline">${comms.map(x => `<div class="tl"><span class="tl-date">${fmtDate(x.d)}</span><span class="tl-line"><i></i></span><div class="tl-body"><b>${esc(x.type)}</b> <span class="muted" style="font-size:.78rem">· ${daysSince(x.d)}d ago</span><p>${esc(x.s)}</p></div></div>`).join("") || `<div class="empty">No contact logged yet.</div>`}</div>
         </section>
@@ -990,59 +1051,70 @@ function viewCandidate() {
           <dt>Languages</dt><dd>${c.langs.join(", ")}</dd>
           <dt>Contact</dt><dd>${esc(c.email)}<br><span class="num">${esc(c.phone)}</span></dd>
           <dt>Résumé</dt><dd>${c.resume ? `<button class="linkish" data-act="view-resume">${esc(c.resume)}</button><br><span class="muted" style="font-size:.8rem">Added ${fmtDate(c.resumeDate || c.consent.date)}</span>` : "None on file"}</dd>
-          <dt>LinkedIn</dt><dd>${c.linkedin ? `<a href="${esc(c.linkedin)}" target="_blank" rel="noopener noreferrer">${esc(c.linkedin.replace(/^https?:\/\/(www\.)?/, ""))}</a>` : `<button class="linkish" data-act="edit-linkedin">Add link</button>`}</dd>
+          <dt>LinkedIn</dt><dd>${c.linkedin ? `<a href="${esc(c.linkedin)}" target="_blank" rel="noopener noreferrer">${esc(c.linkedin.replace(/^https?:\/\/(www\.)?/, ""))}</a>` : (ed ? `<button class="linkish" data-act="edit-linkedin">Add link</button>` : "—")}</dd>
         </dl></section>
+        <section class="panel"><div class="panel-head"><h2>Pipeline</h2><span class="muted" style="font-size:.82rem">Jobs this candidate is in</span></div>
+          ${apps.length ? `<div class="list">${apps.map(({ j, p, i }) => `<div class="app">
+            <div class="row"><button class="linkish" style="font-weight:700" data-job="${j.id}">${esc(j.title)}</button><span class="spacer"></span><span class="chip ${stageCls(p.stage)}">${p.stage}</span></div>
+            <span class="muted" style="font-size:.8rem">${esc(client(j.client).name)} · ${daysSince(p.since)} days in stage</span>
+            ${stageTrack(p.stage)}
+            <span class="why">${p.history.map(h => `${h.stage} ${fmtDate(h.d).replace(/, \d{4}$/, "")}`).join(" → ")}</span>
+          </div>`).join("")}</div>` : `<div class="empty">Not in any pipeline yet. Shortlist from a job page.</div>`}</section>
         <section class="panel"><h2>Skills</h2><div class="skill-list">${c.skills.map(s => `<div class="skill"><span>${esc(s.n)}</span><span class="bar"><i style="width:${Math.round(s.y / maxY * 100)}%"></i></span><span class="num muted">${s.y}y</span></div>`).join("")}</div></section>
         <section class="panel"><h2>Matching open jobs</h2><div class="list">${matches.map(({ j, m }) => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1;min-width:0">${esc(j.title)}</strong><span class="score">${m.total}</span></span><span class="muted" style="font-size:.8rem">${esc(client(j.client).name)} · ${esc(j.city)}</span><span class="bar" style="width:100%"><i style="width:${m.total}%"></i></span>${m.gaps.length ? `<span class="why">${esc(m.gaps.slice(0, 2).join(" · "))}</span>` : `<span class="why" style="color:var(--good)">No gaps found</span>`}</button>`).join("") || `<div class="empty">No open jobs on your desk.</div>`}</div></section>
         <section class="panel"><h2>Privacy &amp; consent</h2><dl class="kv">
           <dt>Consent</dt><dd>${c.consent && c.consent.method !== "Pending" ? `${esc(c.consent.method)}, ${fmtDate(c.consent.date)}` : `<span class="chip bad">Pending</span>`}</dd>
           <dt>CASL (email/SMS)</dt><dd>${esc(c.consent?.casl || "None")}${c.consent?.casl === "Implied" ? ` <span class="chip warn">expires ${fmtDate(addDays(c.consent.date, 730))}</span>` : ""}</dd>
           <dt>Keep record until</dt><dd>${c.consent ? fmtDate(c.consent.retainUntil) : "—"} <span class="chip ${k.cls}">${k.label}</span></dd>
-        </dl><div class="row" style="margin-top:12px"><button class="btn sm" data-act="renew">Record renewed consent</button><button class="btn sm ghost" data-act="export">Access request export</button></div></section>
+        </dl><div class="row" style="margin-top:12px">${ed ? `<button class="btn sm" data-act="renew">Record renewed consent</button>` : ""}<button class="btn sm ghost" data-act="export">Access request export</button></div></section>
       </div>
     </div>`;
 }
 
 function viewJobs() {
-  const js = mine(DB.jobs);
-  return `<div class="page-head"><div><h1>My jobs</h1><p>Open roles you are recruiting for, with the best candidates already on your desk.</p></div></div>
-    <div class="cards">${js.map(j => { const ms = mine(DB.candidates).map(c => matchScore(c, j).total).sort((a, b) => b - a); const issues = postingChecks(j).filter(x => x[0] === "bad").length;
+  const js = visJobs();
+  return `<div class="page-head"><div><h1>${can("viewAll") ? "Jobs" : "My jobs"}</h1><p>${can("viewAll") ? "Every job the company is working on, and who it is assigned to." : "Jobs your manager assigned to you, with the best candidates already on your desk."}</p></div><span class="spacer"></span>${can("addJob") ? `<button class="btn primary" data-act="add-job">+ New job</button>` : ""}</div>
+    ${js.length ? "" : `<div class="empty">No jobs are assigned to you yet. Your manager assigns jobs from the job page.</div>`}
+    <div class="cards">${js.map(j => { const ms = visCands().map(c => matchScore(c, j).total).sort((a, b) => b - a); const issues = postingChecks(j).filter(x => x[0] === "bad").length;
       return `<button class="card" data-job="${j.id}">
         <span class="row"><span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span><span class="chip">${j.type}</span>${issues ? `<span class="chip bad">${issues} posting issue${issues > 1 ? "s" : ""}</span>` : `<span class="chip good">Posting compliant</span>`}</span>
         <strong style="font-size:1rem">${esc(j.title)}</strong>
         <span class="muted" style="font-size:.84rem">${esc(client(j.client).name)}<br>${esc(j.city)}, ${j.prov} · ${j.modes.join(" / ")} · <span class="num">${fmtPay(j.salary)}</span></span>
         <span class="chips">${j.must.map(s => `<span class="chip">${esc(s)}</span>`).join("")}</span>
         <span class="row" style="font-size:.8rem"><span class="bar"><i style="width:${ms[0] || 0}%"></i></span>${ms.filter(x => x >= 60).length} strong matches · ${j.pipeline.length} in pipeline</span>
+        <span class="muted" style="font-size:.78rem">Assigned to ${j.recruiters.length ? esc(j.recruiters.map(firstName).join(", ")) : "nobody yet"}</span>
       </button>`; }).join("")}</div>`;
 }
 
 const STAGES = ["Sourced", "Contacted", "Submitted", "Interview", "Offer", "Placed", "Not a fit"];
 function viewJob() {
   const j = job(ui.id);
-  if (!j || j.owner !== me) return `<div class="empty">This job belongs to another recruiter's desk.</div>`;
+  if (!j || !visJobs().includes(j)) return `<div class="empty">This job is not assigned to you.</div>`;
   const k = client(j.client);
-  const scored = mine(DB.candidates).filter(c => c.status !== "Do not contact").map(c => ({ c, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total);
+  const scored = visCands().filter(c => c.status !== "Do not contact").map(c => ({ c, m: matchScore(c, j) })).sort((a, b) => b.m.total - a.m.total);
   const ranked = scored.filter(x => x.m.mustHit.length), hidden = scored.length - ranked.length;
   const inPipe = new Set(j.pipeline.map(p => p.c));
-  return `<div><button class="btn ghost sm" data-go="jobs">← My jobs</button></div>
-    <div class="page-head"><div><h1>${esc(j.title)}</h1><p>${esc(k.name)} · ${esc(j.city)}, ${j.prov} · ${j.modes.join(" / ")} · ${j.type} · <span class="num">${fmtPay(j.salary)}</span> · opened ${daysSince(j.opened)} days ago</p></div></div>
+  return `<div><button class="btn ghost sm" data-go="jobs">← ${can("viewAll") ? "Jobs" : "My jobs"}</button></div>
+    <div class="page-head"><div><h1>${esc(j.title)}</h1><p>${esc(k.name)} · ${esc(j.city)}, ${j.prov} · ${j.modes.join(" / ")} · ${j.type} · <span class="num">${fmtPay(j.salary)}</span> · opened ${daysSince(j.opened)} days ago</p></div><span class="spacer"></span>
+      ${can("editJob") ? `<select class="input" id="job-status" style="width:auto" aria-label="Job status">${["Open", "On hold", "Filled", "Closed"].map(st => `<option ${st === j.status ? "selected" : ""}>${st}</option>`).join("")}</select>` : `<span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span>`}</div>
     <div class="two">
       <div class="stack">
-        <section class="panel"><div class="panel-head"><h2>Best candidates on your desk</h2><span class="muted" style="font-size:.82rem">Score out of 100: skills 55, location 20, salary 15, credentials 10</span></div>
+        <section class="panel"><div class="panel-head"><h2>${can("viewAll") ? "Best candidates in the company" : "Best candidates on your desk"}</h2><span class="muted" style="font-size:.82rem">Score out of 100: skills 55, location 20, salary 15, credentials 10</span></div>
           <div class="list">${ranked.map(({ c, m }) => `<div class="cand" style="cursor:default">
             <span class="score" style="width:42px;text-align:center">${m.total}</span>
             <span class="cand-main">
-              <span class="row"><button class="btn ghost sm" style="padding:0;font-weight:700;font-size:.98rem;color:var(--fg)" data-open="${c.id}">${esc(c.name)}</button><span class="muted" style="font-size:.84rem">${esc(c.title)} · ${esc(c.city)} · <span class="num">${fmtPay(c.salary)}</span></span></span>
+              <span class="row"><button class="btn ghost sm" style="padding:0;font-weight:700;font-size:.98rem;color:var(--fg)" data-open="${c.id}">${esc(c.name)}</button><span class="muted" style="font-size:.84rem">${esc(c.title)} · ${esc(c.city)} · <span class="num">${fmtPay(c.salary)}</span>${c.owner !== me ? ` · ${esc(firstName(c.owner))}'s desk` : ""}</span></span>
               <span class="chips">${j.must.map(s => `<span class="chip ${m.mustHit.includes(s) ? "hit" : "bad"}">${esc(s)}</span>`).join("")}${m.niceHit.map(s => `<span class="chip hit">${esc(s)}</span>`).join("")}</span>
               <span class="breakdown">${m.parts.map(([l, v, max]) => `<span class="muted">${l}</span><span class="bar"><i style="width:${v / max * 100}%"></i></span><span class="num">${v}/${max}</span>`).join("")}</span>
               ${m.gaps.length ? `<span class="why">Gaps: ${esc(m.gaps.join(" · "))}</span>` : `<span class="why" style="color:var(--good)">No gaps found</span>`}
             </span>
-            <span class="cand-side">${inPipe.has(c.id) ? `<span class="chip good">In pipeline</span>` : `<button class="btn sm" data-shortlist="${c.id}">Shortlist</button>`}<span class="row" style="gap:6px"><span class="dot ${recency(c).cls}"></span>${recency(c).label}</span></span>
+            <span class="cand-side">${inPipe.has(c.id) ? `<span class="chip good">In pipeline</span>` : (c.owner === me || can("viewAll")) ? `<button class="btn sm" data-shortlist="${c.id}">Shortlist</button>` : ""}<span class="row" style="gap:6px"><span class="dot ${recency(c).cls}"></span>${recency(c).label}</span></span>
           </div>`).join("") || `<div class="empty">Nobody on your desk has the must-have skills yet. Upload résumés or widen the search.</div>`}</div>
           ${hidden ? `<p class="muted" style="font-size:.8rem;margin-top:10px">${hidden} other candidate${hidden === 1 ? " has" : "s have"} none of the must-have skills and ${hidden === 1 ? "is" : "are"} not shown.</p>` : ""}</section>
       </div>
       <div class="stack">
-        <section class="panel"><h2>Pipeline</h2>${j.pipeline.length ? `<div class="list">${j.pipeline.map((p, i) => { const c = cand(p.c); return `<div class="row"><button class="btn ghost sm" style="flex:1;justify-content:flex-start;color:var(--fg)" data-open="${c.id}">${esc(c.name)}</button><select class="input" style="width:auto" data-stage="${i}" aria-label="Stage for ${esc(c.name)}">${STAGES.map(s => `<option ${s === p.stage ? "selected" : ""}>${s}</option>`).join("")}</select></div>`; }).join("")}</div>` : `<div class="empty">Shortlist candidates from the ranking to start the pipeline.</div>`}</section>
+        ${can("assign") ? `<section class="panel"><h2>Assigned recruiters</h2><div class="stack" style="gap:6px">${recruiterUsers().map(u => `<label class="row" style="font-size:.88rem"><input type="checkbox" data-assign="${u.id}" ${j.recruiters.includes(u.id) ? "checked" : ""}> ${esc(u.name)} <span class="muted" style="font-size:.78rem">${esc(u.desk)}</span></label>`).join("")}</div><p class="demo-note" style="margin-top:8px">Assigned recruiters see this job and can work it with their own candidates.</p></section>` : `<section class="panel"><h2>Assigned to</h2><p>${esc(j.recruiters.map(id => recruiter(id)?.name).join(", "))}</p><p class="muted" style="font-size:.8rem;margin-top:6px">Managed by ${esc(recruiter(j.manager)?.name || "—")}</p></section>`}
+        <section class="panel"><div class="panel-head"><h2>Pipeline</h2><span class="spacer"></span><button class="btn ghost sm" data-pipejob="${j.id}">Board view</button></div>${j.pipeline.length ? `<div class="list">${j.pipeline.map((p, i) => { const c = cand(p.c); const mineOrMgr = c.owner === me || can("viewAll"); return `<div class="row"><button class="btn ghost sm" style="flex:1;justify-content:flex-start;color:var(--fg);min-width:0" data-open="${c.id}" ${visCands().includes(c) ? "" : "disabled"}>${esc(c.name)}${c.owner !== me ? ` <span class="muted" style="font-weight:500">· ${esc(firstName(c.owner))}</span>` : ""}</button><span class="muted num" style="font-size:.75rem">${daysSince(p.since)}d</span>${mineOrMgr ? `<select class="input" style="width:auto" data-pstage="${j.id}:${i}" aria-label="Stage for ${esc(c.name)}">${STAGES.map(s => `<option ${s === p.stage ? "selected" : ""}>${s}</option>`).join("")}</select>` : `<span class="chip">${p.stage}</span>`}</div>`; }).join("")}</div>` : `<div class="empty">Shortlist candidates from the ranking to start the pipeline.</div>`}</section>
         <section class="panel"><h2>What ${esc(k.name)} cares about</h2><ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>${k.avoid.length ? `<h3 style="margin:12px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}<p class="muted" style="font-size:.8rem;margin-top:10px">Fee ${esc(k.fee)} · guarantee ${esc(k.guarantee)}</p></section>
         <section class="panel"><h2>Job posting check</h2><p class="muted" style="font-size:.8rem;margin-bottom:6px">Rules for ${j.prov} postings</p>${postingChecks(j).map(([s, t]) => `<div class="check"><span class="ic ${s}">${s === "good" ? "✓" : s === "warn" ? "!" : "✕"}</span><span>${esc(t)}</span></div>`).join("")}
           <dl class="kv" style="margin-top:10px"><dt>Posting text</dt><dd>${esc(j.posting.text)}</dd><dt>AI statement</dt><dd>${esc(j.posting.ai || "None")}</dd></dl></section>
@@ -1050,24 +1122,120 @@ function viewJob() {
     </div>`;
 }
 
+function pipeEntries() {
+  return visJobs().flatMap(j => j.pipeline.map((p, i) => ({ j, p, i, c: cand(p.c) })))
+    .filter(x => x.c && (can("viewAll") || x.c.owner === me));
+}
+const stuck = x => !["Placed", "Not a fit"].includes(x.p.stage) && daysSince(x.p.since) > 14;
+const stageCls = st => ({ Offer: "good", Placed: "good", "Not a fit": "bad", Interview: "hit" }[st] || "");
+function stageTrack(stage) {
+  const lost = stage === "Not a fit", at = STAGES.indexOf(stage);
+  return `<span class="track" aria-label="Stage ${esc(stage)}">${STAGES.slice(0, 6).map((st, i) => `<i class="${lost ? "lost" : i <= at ? "on" : ""}" title="${st}"></i>`).join("")}</span>`;
+}
+function viewPipeline() {
+  let es = pipeEntries();
+  if (ui.pipeJob !== "all") es = es.filter(x => x.j.id === ui.pipeJob);
+  if (can("viewAll") && ui.pipeRec !== "all") es = es.filter(x => x.c.owner === ui.pipeRec || x.j.recruiters.includes(ui.pipeRec) && x.p.by === ui.pipeRec);
+  const cols = STAGES.slice(0, 6), lost = es.filter(x => x.p.stage === "Not a fit");
+  const card = x => `<div class="pcard ${stuck(x) ? "stale" : ""}">
+      <div class="row" style="gap:6px;flex-wrap:nowrap"><button class="linkish" style="font-weight:700;color:var(--fg);text-decoration:none" data-open="${x.c.id}">${esc(x.c.name)}</button><span class="spacer"></span>${can("viewAll") ? `<span class="avatar xs" title="${esc(recruiter(x.c.owner)?.name || "")}">${recruiter(x.c.owner)?.initials || "?"}</span>` : ""}</div>
+      <button class="linkish" style="font-size:.8rem;color:var(--muted);text-decoration:none" data-job="${x.j.id}">${esc(x.j.title)} · ${esc(client(x.j.client).name)}</button>
+      <div class="row" style="gap:6px"><span class="num ${stuck(x) ? "" : "muted"}" style="font-size:.74rem;white-space:nowrap;${stuck(x) ? "color:var(--warn);font-weight:600" : ""}">${daysSince(x.p.since)}d in stage</span><span class="spacer"></span>
+        <select class="input mini" data-pstage="${x.j.id}:${x.i}" aria-label="Move ${esc(x.c.name)}">${STAGES.map(st => `<option ${st === x.p.stage ? "selected" : ""}>${st}</option>`).join("")}</select></div>
+    </div>`;
+  return `<div class="page-head"><div><h1>${can("viewAll") ? "Team pipeline" : "My pipeline"}</h1><p>Every candidate you are moving through a job, one row per candidate and job. Change the stage on a card to move it.</p></div></div>
+    <div class="row">
+      <select class="input" id="pipe-job" style="width:auto;max-width:100%" aria-label="Job"><option value="all">All ${can("viewAll") ? "" : "my "}jobs</option>${visJobs().map(j => `<option value="${j.id}" ${ui.pipeJob === j.id ? "selected" : ""}>${esc(j.title)} · ${esc(client(j.client).name)}</option>`).join("")}</select>
+      ${can("viewAll") ? `<select class="input" id="pipe-rec" style="width:auto" aria-label="Recruiter"><option value="all">All recruiters</option>${recruiterUsers().map(u => `<option value="${u.id}" ${ui.pipeRec === u.id ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select>` : ""}
+      <span class="spacer"></span><span class="muted" style="font-size:.82rem">${es.filter(stuck).length} stuck over 14 days</span>
+    </div>
+    <div class="board-wrap"><div class="board">${cols.map(st => { const list = es.filter(x => x.p.stage === st); return `<section class="col"><div class="col-head"><span>${st}</span><span class="num">${list.length}</span></div>${list.map(card).join("") || `<p class="muted" style="font-size:.8rem;padding:6px 2px">Nobody here</p>`}</section>`; }).join("")}</div></div>
+    ${lost.length ? `<section class="panel"><h2>Not a fit (${lost.length})</h2><div class="cards">${lost.map(card).join("")}</div></section>` : ""}`;
+}
+function viewTeam() {
+  if (!can("manageUsers")) return `<div class="empty">Only admins can manage the team.</div>`;
+  const rows = [["See and search every recruiter's candidates", 1, 1, 0], ["Upload résumés and keep their own candidates", 1, 1, 1], ["Edit a candidate record (owner only)", 1, 1, 1], ["Move candidates through the pipeline", 1, 1, 1],
+    ["Add and edit clients", 1, 1, 0], ["Create jobs and change job status", 1, 1, 0], ["Assign jobs to recruiters", 1, 1, 0], ["Add users and change roles", 1, 0, 0]];
+  return `<div class="page-head"><div><h1>Team &amp; roles</h1><p>Who can do what in ${esc(DB.company.name)}.</p></div></div>
+    <section class="panel"><h2>Permissions</h2><div class="table-wrap"><table><thead><tr><th>Action</th><th>Admin</th><th>Manager</th><th>Recruiter</th></tr></thead><tbody>
+      ${rows.map(([a, ...r]) => `<tr><td>${a}</td>${r.map(v => `<td>${v ? `<span class="ic good" style="display:inline-grid;width:20px;height:20px;border-radius:50%;place-items:center;font-size:.72rem">✓</span>` : `<span class="muted">—</span>`}</td>`).join("")}</tr>`).join("")}
+    </tbody></table></div><p class="demo-note" style="margin-top:8px">Recruiters only see candidates they own and jobs assigned to them; clients appear once they have a job with that client.</p></section>
+    <section class="panel"><h2>People</h2><div class="table-wrap"><table><thead><tr><th>Name</th><th>Role</th><th>Desk</th><th>Candidates</th><th>Jobs</th></tr></thead><tbody>
+      ${DB.recruiters.map(u => `<tr><td><strong>${esc(u.name)}</strong><br><span class="muted">${esc(u.email)}</span></td>
+        <td>${u.id === me ? `<span class="chip role-${u.role}">${ROLE_LABEL[u.role]}</span> <span class="muted" style="font-size:.78rem">(you)</span>` : `<select class="input" style="width:auto" data-role="${u.id}" aria-label="Role for ${esc(u.name)}">${Object.entries(ROLE_LABEL).map(([k, l]) => `<option value="${k}" ${k === u.role ? "selected" : ""}>${l}</option>`).join("")}</select>`}</td>
+        <td>${esc(u.desk)}</td><td class="num">${DB.candidates.filter(c => c.owner === u.id).length}</td><td class="num">${u.role === "recruiter" ? DB.jobs.filter(j => j.recruiters.includes(u.id)).length : DB.jobs.filter(j => j.manager === u.id).length}</td></tr>`).join("")}
+    </tbody></table></div>
+    <form id="user-form" class="form-grid" style="margin-top:16px"><div class="field"><label for="u-name">Full name</label><input class="input" id="u-name" required></div><div class="field"><label for="u-email">Work email</label><input class="input" id="u-email" type="email" required placeholder="name@ivrecruitment.example"></div>
+      <div class="field"><label for="u-role">Role</label><select class="input" id="u-role"><option value="recruiter">Recruiter</option><option value="manager">Manager</option><option value="admin">Admin</option></select></div><div class="field"><label for="u-desk">Desk</label><input class="input" id="u-desk" placeholder="e.g. Mechanical · Ottawa"></div>
+      <div class="row full"><button class="btn primary">Add person</button><span class="demo-note">Demo: new people sign in with the password “demo”.</span></div></form></section>`;
+}
+function jobFromForm() {
+  const v = id => document.getElementById(id)?.value?.trim() ?? "", ck = id => !!document.getElementById(id)?.checked;
+  const list = id => v(id).split(",").map(x => x.trim()).filter(Boolean);
+  const type = v("jb-paytype"), num = id => +v(id) || 0;
+  return { client: v("jb-client"), title: v("jb-title"), city: v("jb-city"), prov: v("jb-prov"), modes: ["Hybrid", "On-site", "Remote"].filter(m => ck("jb-m-" + m)),
+    type: v("jb-type"), salary: num("jb-min") ? { min: num("jb-min"), max: num("jb-max") || num("jb-min"), type } : null, must: list("jb-must"), nice: list("jb-nice"),
+    designations: v("jb-desig") ? [v("jb-desig")] : [], langs: ck("jb-fr") ? ["French"] : [],
+    posting: { ai: ck("jb-ai") ? "We use AI-assisted tools to help screen and match applications. A recruiter reviews every application." : "", vacancy: ck("jb-vac") ? "existing" : "", fr: ck("jb-frpost"), text: v("jb-text") },
+    recruiters: recruiterUsers().map(u => u.id).filter(id => ck("jb-r-" + id)) };
+}
+function jobChecksHtml(d) {
+  if (!d.client || !client(d.client)) return "";
+  const chk = postingChecks({ ...d, salary: d.salary || { min: 0, max: 0, type: "annual" } });
+  return chk.map(([st, t]) => `<div class="check"><span class="ic ${st}">${st === "good" ? "✓" : st === "warn" ? "!" : "✕"}</span><span>${esc(t)}</span></div>`).join("");
+}
+function viewAddJob() {
+  const provs = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"];
+  const k0 = client(ui.jobClient) || DB.clients[0];
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="aj-title">
+    <div class="panel-head"><h2 id="aj-title">New job</h2><span class="spacer"></span><button class="btn ghost sm" data-act="close">Close</button></div>
+    <form id="job-form" class="stack">
+      <div class="form-grid">
+        <div class="field full"><label for="jb-client">Client</label><select class="input" id="jb-client">${DB.clients.map(k => `<option value="${k.id}" ${k.id === k0?.id ? "selected" : ""}>${esc(k.name)} · ${esc(k.city)}</option>`).join("")}</select></div>
+        <div class="field full"><label for="jb-title">Job title</label><input class="input" id="jb-title" required placeholder="e.g. Intermediate Civil Engineer"></div>
+        <div class="field"><label for="jb-city">City</label><input class="input" id="jb-city" required value="${esc(k0?.city || "")}"></div>
+        <div class="field"><label for="jb-prov">Province / territory</label><select class="input" id="jb-prov">${provs.map(x => `<option ${x === (k0?.prov || "ON") ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+        <div class="field"><span class="eyebrow" style="font-size:.78rem;letter-spacing:0;text-transform:none;font-weight:600">Work mode</span><div class="row">${["Hybrid", "On-site", "Remote"].map(m => `<label class="row" style="gap:4px;font-size:.88rem"><input type="checkbox" id="jb-m-${m}" ${m === "Hybrid" ? "checked" : ""}> ${m}</label>`).join("")}</div></div>
+        <div class="field"><label for="jb-type">Type</label><select class="input" id="jb-type"><option>Permanent</option><option>Contract</option></select></div>
+        <div class="field"><label for="jb-paytype">Pay is</label><select class="input" id="jb-paytype"><option value="annual">Annual salary (CAD)</option><option value="hourly">Hourly rate (CAD)</option></select></div>
+        <div class="field"><label for="jb-min">Pay from</label><input class="input" id="jb-min" type="number" min="0" placeholder="e.g. 95000"></div>
+        <div class="field"><label for="jb-max">Pay to</label><input class="input" id="jb-max" type="number" min="0" placeholder="e.g. 120000"></div>
+        <div class="field"><label for="jb-desig">Required designation</label><select class="input" id="jb-desig"><option value="">None</option><option>P.Eng</option><option>ing. (OIQ)</option><option>EIT</option><option>PMP</option></select></div>
+        <div class="field full"><label for="jb-must">Must-have skills (comma separated)</label><input class="input" id="jb-must" required placeholder="e.g. Civil 3D, Stormwater management"></div>
+        <div class="field full"><label for="jb-nice">Nice-to-have skills</label><input class="input" id="jb-nice" placeholder="e.g. MTO standards"></div>
+        <div class="field full"><label for="jb-text">Posting text</label><textarea class="input" id="jb-text" placeholder="What the role involves. Do not ask for Canadian experience."></textarea></div>
+        <div class="field full stack" style="gap:6px">
+          <label class="row" style="font-size:.88rem"><input type="checkbox" id="jb-ai" checked> Posting states that AI helps screen applications</label>
+          <label class="row" style="font-size:.88rem"><input type="checkbox" id="jb-vac" checked> This is an existing vacancy</label>
+          <label class="row" style="font-size:.88rem"><input type="checkbox" id="jb-fr"> French required for the role</label>
+          <label class="row" style="font-size:.88rem"><input type="checkbox" id="jb-frpost"> A French version of the posting is published</label>
+        </div>
+        <div class="field full"><span class="eyebrow" style="font-size:.78rem;letter-spacing:0;text-transform:none;font-weight:600">Assign to recruiters</span><div class="row">${recruiterUsers().map(u => `<label class="row" style="gap:4px;font-size:.88rem"><input type="checkbox" id="jb-r-${u.id}"> ${esc(u.name)}</label>`).join("")}</div></div>
+      </div>
+      <section class="panel" style="background:var(--surface-2)"><h3 style="margin-bottom:6px">Posting check, live</h3><div id="job-checks">${jobChecksHtml({ client: k0?.id, prov: k0?.prov || "ON", salary: null, posting: { ai: "x", vacancy: "existing", fr: false, text: "" } })}</div></section>
+      <div class="row"><button class="btn primary">Create job</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>
+    </form>
+  </div></div>`;
+}
+
 function viewClients() {
-  return `<div class="page-head"><div><h1>My clients</h1><p>Hiring preferences, contacts and terms for each client you manage.</p></div><span class="spacer"></span><button class="btn primary" data-act="add-client">+ Add client</button></div>
-    <div class="cards">${mine(DB.clients).map(k => { const open = DB.jobs.filter(j => j.client === k.id && j.status === "Open"); const d = daysSince(k.lastContact);
+  return `<div class="page-head"><div><h1>${can("viewAll") ? "Clients" : "My clients"}</h1><p>${can("viewAll") ? "Every client of the company, with preferences, contacts and terms." : "Clients of the jobs assigned to you. Managers add and edit clients."}</p></div><span class="spacer"></span>${can("addClient") ? `<button class="btn primary" data-act="add-client">+ Add client</button>` : ""}</div>
+    <div class="cards">${visClients().map(k => { const open = DB.jobs.filter(j => j.client === k.id && j.status === "Open"); const d = daysSince(k.lastContact);
       return `<button class="card" data-client="${k.id}"><strong style="font-size:1rem">${esc(k.name)}</strong><span class="muted" style="font-size:.84rem">${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size ? k.size + " employees" : "size not set"}</span>
         <ul class="pain moti">${k.prefs.slice(0, 2).map(p => `<li>${esc(p)}</li>`).join("")}</ul>
         <span class="row" style="font-size:.8rem"><span class="chip">${open.length} open job${open.length === 1 ? "" : "s"}</span><span class="row" style="gap:6px"><span class="dot ${d <= 30 ? "good" : "warn"}"></span>Last contact ${d} days ago</span></span></button>`; }).join("")}</div>`;
 }
 function viewClient() {
   const k = client(ui.id);
-  if (!k || k.owner !== me) return `<div class="empty">This client belongs to another recruiter's desk.</div>`;
-  const js = DB.jobs.filter(j => j.client === k.id);
-  return `<div><button class="btn ghost sm" data-go="clients">← My clients</button></div>
-    <div class="page-head"><div><h1>${esc(k.name)}</h1><p>${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size ? k.size + " employees" : "size not set"}</p></div></div>
+  if (!k || !visClients().includes(k)) return `<div class="empty">You have no jobs with this client.</div>`;
+  const js = visJobs().filter(j => j.client === k.id);
+  return `<div><button class="btn ghost sm" data-go="clients">← ${can("viewAll") ? "Clients" : "My clients"}</button></div>
+    <div class="page-head"><div><h1>${esc(k.name)}</h1><p>${esc(k.industry)} · ${esc(k.city)}, ${k.prov} · ${k.size ? k.size + " employees" : "size not set"} · account manager ${esc(recruiter(k.owner)?.name || "—")}</p></div><span class="spacer"></span>${can("addJob") ? `<button class="btn primary" data-act="add-job" data-client-id="${k.id}">+ New job for this client</button>` : ""}</div>
     <div class="two">
       <div class="stack">
-        <section class="panel"><div class="panel-head"><h2>Hiring preferences</h2></div>${k.prefs.length ? `<ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : `<p class="muted">No preferences yet. Add the first one below.</p>`}
+        <section class="panel"><div class="panel-head"><h2>Hiring preferences</h2></div>${k.prefs.length ? `<ul class="pain moti">${k.prefs.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : `<p class="muted">No preferences yet.</p>`}
           ${k.avoid.length ? `<h3 style="margin:14px 0 6px">Avoid</h3><ul class="pain">${k.avoid.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : ""}
-          <form id="pref-form" class="row" style="margin-top:14px"><input class="input" id="pref-text" style="flex:1;min-width:180px" placeholder="Add a preference, e.g. Prefers candidates within 45 min of office" required><button class="btn sm">Add</button></form>
+          ${!can("editClient") ? `<p class="demo-note" style="margin-top:10px">Heard something new from this client? Tell your manager, who keeps client records up to date.</p>` : `<form id="pref-form" class="row" style="margin-top:14px"><input class="input" id="pref-text" style="flex:1;min-width:180px" placeholder="Add a preference, e.g. Prefers candidates within 45 min of office" required><button class="btn sm">Add</button></form>`}
           <p class="demo-note" style="margin-top:8px">Keep preferences job-related. Requests based on age, gender, origin, religion, family status or disability breach human rights codes and should be declined.</p></section>
         <section class="panel"><h2>Jobs</h2><div class="list">${js.length ? "" : `<div class="empty">No jobs for this client yet.</div>`}${js.map(j => `<button class="card" data-job="${j.id}"><span class="row"><strong style="flex:1">${esc(j.title)}</strong><span class="chip ${j.status === "Open" ? "good" : ""}">${j.status}</span></span><span class="muted" style="font-size:.82rem">${esc(j.city)} · <span class="num">${fmtPay(j.salary)}</span> · ${j.pipeline.length} in pipeline</span></button>`).join("")}</div></section>
       </div>
@@ -1079,7 +1247,7 @@ function viewClient() {
 }
 
 function viewCompliance() {
-  const cs = mine(DB.candidates), js = mine(DB.jobs), r = recruiter(me);
+  const cs = visCands(), js = visJobs(), r = recruiter(me);
   const consentRows = cs.map(c => ({ c, k: consentState(c) })).filter(x => x.k.cls !== "good");
   const implied = cs.filter(c => c.consent?.casl === "Implied");
   const jobRows = js.map(j => ({ j, bad: postingChecks(j).filter(x => x[0] !== "good") })).filter(x => x.bad.length);
@@ -1094,12 +1262,12 @@ function viewCompliance() {
     ["Professional titles", "Only licensed members can use “engineer” titles: PEO (ON), OIQ (QC), APEGA (AB), EGBC (BC). Candidates' designations are tracked separately from job titles."],
     ["Accessibility: AODA", "Ontario employers must offer accommodation during recruitment. Add accommodation requests as a memory card."]
   ];
-  return `<div class="page-head"><div><h1>Compliance</h1><p>What needs fixing on your desk, checked against Canadian hiring and privacy rules.</p></div></div>
+  return `<div class="page-head"><div><h1>Compliance</h1><p>${can("viewAll") ? "What needs fixing across the team" : "What needs fixing on your desk"}, checked against Canadian hiring and privacy rules.</p></div></div>
     <div class="stats">
       <div class="stat"><b style="color:${consentRows.length ? "var(--bad)" : "var(--good)"}">${consentRows.length}</b><span>Consent or retention issues</span></div>
       <div class="stat"><b style="color:${implied.length ? "var(--warn)" : "var(--good)"}">${implied.length}</b><span>Implied CASL consent only</span></div>
       <div class="stat"><b style="color:${jobRows.length ? "var(--bad)" : "var(--good)"}">${jobRows.length}</b><span>Job postings to fix</span></div>
-      <div class="stat"><b style="font-size:1rem;padding-top:8px">${esc(r.licence)}</b><span>Company licence on file</span></div>
+      <div class="stat"><b style="font-size:1rem;padding-top:8px">${esc(DB.company.licence)}</b><span>Company licence on file</span></div>
     </div>
     <div class="two">
       <div class="stack">
@@ -1273,8 +1441,8 @@ function render() {
   const app = document.getElementById("app");
   const focusId = document.activeElement?.id, selStart = document.activeElement?.selectionStart;
   if (!me) { app.innerHTML = viewLogin(); return; }
-  const views = { home: viewHome, candidates: viewCandidates, candidate: viewCandidate, jobs: viewJobs, job: viewJob, clients: viewClients, client: viewClient, compliance: viewCompliance };
-  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : ui.modal === "resume" ? viewResume() : ui.modal === "client" ? viewAddClient() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
+  const views = { home: viewHome, pipeline: viewPipeline, team: viewTeam, candidates: viewCandidates, candidate: viewCandidate, jobs: viewJobs, job: viewJob, clients: viewClients, client: viewClient, compliance: viewCompliance };
+  app.innerHTML = shell((views[ui.view] || viewHome)()) + (ui.modal === "upload" ? viewUpload() : ui.modal === "resume" ? viewResume() : ui.modal === "client" ? viewAddClient() : ui.modal === "job" ? viewAddJob() : "") + (ui.toast ? `<div class="toast" role="status">${esc(ui.toast)}</div>` : "");
   if (focusId) { const el = document.getElementById(focusId); if (el && el.focus) { el.focus(); try { if (selStart != null) el.setSelectionRange(selStart, selStart); } catch (e) {} } }
   const drop = document.getElementById("drop");
   if (drop) {
@@ -1295,18 +1463,19 @@ async function handleFile(file) {
 function doSearch(q) { ui.query = q; ui.filters = q.trim() ? parseQuery(q) : null; ui.view = "home"; ui.modal = null; render(); }
 
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-pick],[data-go],[data-open],[data-job],[data-client],[data-act],[data-q],[data-drop],[data-cf],[data-shortlist]");
+  const t = e.target.closest("[data-pick],[data-go],[data-open],[data-job],[data-client],[data-act],[data-q],[data-drop],[data-cf],[data-shortlist],[data-pipejob]");
   if (!t) return;
   const d = t.dataset;
   if (d.pick) { ui.loginPick = d.pick; ui.loginErr = null; render(); return; }
   if (d.drop) { dropFilter(ui.filters, d.drop); render(); return; }
   if (d.q) { doSearch(d.q); return; }
   if (d.cf) { ui.candFilter = d.cf; render(); return; }
-  if (d.go) { if (d.go === "home") { ui.filters = null; ui.query = ""; } go(d.go); return; }
+  if (d.go) { if (d.go === "home") { ui.filters = null; ui.query = ""; } if (d.go === "pipeline" && t.classList.contains("nav-btn")) { ui.pipeJob = "all"; } go(d.go); return; }
   if (d.open) { e.stopPropagation(); go("candidate", d.open); return; }
   if (d.job) { go("job", d.job); return; }
   if (d.client) { go("client", d.client); return; }
-  if (d.shortlist) { job(ui.id).pipeline.push({ c: d.shortlist, stage: "Sourced" }); save(); toast("Added to pipeline"); return; }
+  if (d.pipejob) { ui.pipeJob = d.pipejob; ui.pipeRec = "all"; go("pipeline"); return; }
+  if (d.shortlist) { const c = cand(d.shortlist); job(ui.id).pipeline.push({ c: c.id, stage: "Sourced", by: c.owner, since: ago(0), history: [{ stage: "Sourced", d: ago(0) }] }); save(); toast("Added to pipeline"); return; }
   const c = ui.view === "candidate" ? cand(ui.id) : null;
   switch (d.act) {
     case "logout": setMe(null); ui.view = "home"; ui.filters = null; ui.query = ""; render(); break;
@@ -1317,7 +1486,8 @@ document.addEventListener("click", e => {
     case "close": ui.modal = null; render(); break;
     case "clear-search": ui.filters = null; ui.query = ""; render(); break;
     case "log": ui.modal = ui.modal === "log" ? null : "log"; render(); document.getElementById("log-text")?.focus(); break;
-    case "add-client": ui.modal = "client"; render(); document.getElementById("k-name")?.focus(); break;
+    case "add-job": if (!can("addJob")) break; ui.jobClient = d.clientId || null; ui.modal = "job"; render(); document.getElementById("jb-title")?.focus(); break;
+    case "add-client": if (!can("addClient")) break; ui.modal = "client"; render(); document.getElementById("k-name")?.focus(); break;
     case "view-resume": ui.modal = "resume"; render(); break;
     case "edit-linkedin": ui.modal = ui.modal === "linkedin" ? null : "linkedin"; ui.liErr = null; render(); document.getElementById("li-url")?.focus(); break;
     case "add-memo": ui.modal = ui.modal === "memo" ? null : "memo"; render(); document.getElementById("memo-text")?.focus(); break;
@@ -1333,9 +1503,23 @@ document.addEventListener("click", e => {
 document.addEventListener("change", e => {
   if (e.target.id === "file-in" && e.target.files[0]) handleFile(e.target.files[0]);
   if (e.target.id === "status-sel") { cand(ui.id).status = e.target.value; save(); toast("Status updated"); }
-  if (e.target.dataset.stage != null) { job(ui.id).pipeline[+e.target.dataset.stage].stage = e.target.value; save(); toast("Stage updated"); }
+  if (e.target.dataset.pstage) {
+    const [jid, i] = e.target.dataset.pstage.split(":"), p = job(jid).pipeline[+i];
+    if (p.stage !== e.target.value) { p.stage = e.target.value; p.since = ago(0); p.history.push({ stage: p.stage, d: ago(0) }); save(); toast(`Moved to ${p.stage}`); }
+  }
+  if (e.target.id === "pipe-job") { ui.pipeJob = e.target.value; render(); }
+  if (e.target.id === "pipe-rec") { ui.pipeRec = e.target.value; render(); }
+  if (e.target.id === "cand-owner") { ui.candOwner = e.target.value; render(); }
+  if (e.target.id === "job-status" && can("editJob")) { job(ui.id).status = e.target.value; save(); toast("Job status updated"); }
+  if (e.target.dataset.assign && can("assign")) {
+    const j = job(ui.id), id = e.target.dataset.assign;
+    j.recruiters = e.target.checked ? [...new Set([...j.recruiters, id])] : j.recruiters.filter(x => x !== id); save(); toast(e.target.checked ? `Assigned to ${firstName(id)}` : `Removed ${firstName(id)}`);
+  }
+  if (e.target.dataset.role && can("manageUsers")) { recruiter(e.target.dataset.role).role = e.target.value; save(); toast("Role updated"); }
+  if (e.target.id === "jb-client") { const k = client(e.target.value); document.getElementById("jb-city").value = k.city; document.getElementById("jb-prov").value = k.prov; }
+  if (e.target.closest?.("#job-form")) { const el = document.getElementById("job-checks"); if (el) el.innerHTML = jobChecksHtml(jobFromForm()); }
 });
-document.addEventListener("input", e => { if (e.target.id === "cand-filter") { ui.candText = e.target.value; render(); } if (e.target.id === "login-email") ui.loginEmail = e.target.value; });
+document.addEventListener("input", e => { if (e.target.closest?.("#job-form")) { const el = document.getElementById("job-checks"); if (el) el.innerHTML = jobChecksHtml(jobFromForm()); } if (e.target.id === "cand-filter") { ui.candText = e.target.value; render(); } if (e.target.id === "login-email") ui.loginEmail = e.target.value; });
 document.addEventListener("submit", e => {
   e.preventDefault();
   const v = id => document.getElementById(id)?.value?.trim() ?? "";
@@ -1359,14 +1543,29 @@ document.addEventListener("submit", e => {
       if (u === null) { ui.liErr = "Use a profile link like https://www.linkedin.com/in/name"; render(); return; }
       cand(ui.id).linkedin = u; ui.modal = null; ui.liErr = null; save(); toast(u ? "LinkedIn link saved" : "LinkedIn link removed"); break;
     }
+    case "job-form": {
+      if (!can("addJob")) break;
+      const d = jobFromForm();
+      if (!d.modes.length) { toast("Pick at least one work mode"); return; }
+      if (!d.salary) d.salary = { min: 0, max: 0, type: "annual" };
+      const j = { id: uid("j"), ...d, manager: me, status: "Open", opened: ago(0), pipeline: [] };
+      DB.jobs.push(j); save(); ui.modal = null; ui.view = "job"; ui.id = j.id; toast(j.recruiters.length ? `Job created and assigned to ${j.recruiters.map(firstName).join(", ")}` : "Job created. Assign a recruiter on the right."); break;
+    }
+    case "user-form": {
+      if (!can("manageUsers")) break;
+      const name = v("u-name"), email = v("u-email");
+      if (DB.recruiters.some(u => u.email.toLowerCase() === email.toLowerCase())) { toast("Someone already uses that email"); return; }
+      DB.recruiters.push({ id: uid("u"), name, initials: initials(name), desk: v("u-desk") || "Not set", email, role: v("u-role") }); save(); toast(`${name} added`); break;
+    }
     case "client-form": {
+      if (!can("addClient")) break;
       const lines = id => v(id).split("\n").map(x => x.trim()).filter(Boolean);
       const k = { id: uid("k"), owner: me, name: v("k-name"), industry: v("k-industry") || "Not set", city: v("k-city"), prov: v("k-prov"), size: +v("k-size") || 0,
         contacts: v("k-cname") ? [{ n: v("k-cname"), r: v("k-crole") || "Hiring contact", e: v("k-cemail") }] : [],
         prefs: lines("k-prefs"), avoid: lines("k-avoid"), fee: v("k-fee") || "Not agreed", guarantee: v("k-guarantee") || "Not agreed", lastContact: ago(0) };
       DB.clients.push(k); save(); ui.modal = null; ui.view = "client"; ui.id = k.id; toast("Client added"); break;
     }
-    case "pref-form": { client(ui.id).prefs.push(v("pref-text")); save(); toast("Preference added"); break; }
+    case "pref-form": { if (!can("editClient")) break; client(ui.id).prefs.push(v("pref-text")); save(); toast("Preference added"); break; }
     case "cand-form": {
       const smin = +v("f-smin") || 0, smax = +v("f-smax") || smin;
       const c = { id: uid("c"), owner: me, name: v("f-name"), title: v("f-title"), city: v("f-city") || "Unknown", prov: v("f-prov"), email: v("f-email"), phone: v("f-phone"),
